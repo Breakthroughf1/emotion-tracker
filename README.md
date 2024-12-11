@@ -47,5 +47,5 @@
 ### **Setup Instructions**
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/emotion-trackr.git
-   cd emotion-trackr
+   git clone https://github.com/your-username/emotion-tracker.git
+   cd emotion-tracker
