@@ -1,0 +1,9 @@
+fastapi~=0.115.6
+python-dotenv
+uvicorn
+passlib
+bcrypt
+mysql-connector-python
+pydantic~=2.10.3
+databases~=0.9.0
+SQLAlchemy~=2.0.36
