@@ -1,57 +1,38 @@
+// App.js
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
 import LoginPage from "./pages/LoginPage";
 import RegistrationPage from "./pages/RegisterPage";
 import ForgetPasswordPage from "./pages/ForgotPasswordPage";
 import UserDashboardPage from "./pages/UserDashboardPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
-// Mock function to get user role 
-const getUserRole = () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (!user) return null; // Not logged in
-  return user.role; // Either 'user' or 'admin'
-};
-
-// Wrapper route for handling root redirection
-const RootRedirect = () => {
-  const role = getUserRole();
-  
-  if (!role) return <Navigate to="/login" replace />; // Redirect to login if not logged in
-  
-  // Redirect to appropriate dashboard based on role
-  return role === "admin" ? (
-    <Navigate to="/admin-dashboard" replace />
-  ) : (
-    <Navigate to="/user-dashboard" replace />
-  );
-};
+import PrivateRoute from "./components/Routes/PrivateRoute";
+import PublicRoute from "./components/Routes/PublicRoute";
 
 const App = () => {
   return (
     <Router>
       <Routes>
-        {/* Root route based on user role */}
-        <Route path="/" element={<RootRedirect />} />
+        {/* Public Routes */}
+        <Route element={<PublicRoute />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegistrationPage />} />
+          <Route path="/forgot-password" element={<ForgetPasswordPage />} />
+        </Route>
 
-        {/* Public routes */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegistrationPage />} />
-        <Route path="/forgot-password" element={<ForgetPasswordPage />} />
+        {/* Private Routes */}
+        <Route element={<PrivateRoute allowedRoles={[false]} />}>
+          <Route path="/user-dashboard" element={<UserDashboardPage />} />
+        </Route>
+        <Route element={<PrivateRoute allowedRoles={[true]} />}>
+          <Route path="/admin-dashboard" element={<AdminDashboardPage />} />
+        </Route>
 
-        {/* Private routes */}
-        <Route
-          path="/user-dashboard"
-          element={
-            getUserRole() === "user" ? <UserDashboardPage /> : <Navigate to="/" replace />
-          }
-        />
-        <Route
-          path="/admin-dashboard"
-          element={
-            getUserRole() === "admin" ? <AdminDashboardPage /> : <Navigate to="/" replace />
-          }
-        />
+        {/* Default Route */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
   );
