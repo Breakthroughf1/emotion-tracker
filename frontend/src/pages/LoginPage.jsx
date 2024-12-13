@@ -16,11 +16,7 @@ const LoginPage = () => {
     try {
       const data = await loginUser({ email, password });
       localStorage.setItem("token", data.token); // Save JWT token
-      if (data.isAdmin) {
-        navigate("/admin-dashboard"); // Redirect to admin dashboard
-      } else {
-        navigate("/user-dashboard"); // Redirect to user dashboard
-      }
+      navigate("/"); // Redirect
     } catch (err) {
       setError("Invalid email or password");
     } finally {
@@ -92,7 +88,7 @@ const LoginPage = () => {
               </label>
             </div>
             <a
-              href='/forgot-password'
+              href="/forgot-password"
               className="text-sm text-blue-600 hover:underline dark:text-blue-500"
             >
               Forgot password?

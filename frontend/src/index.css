@@ -1,3 +1,33 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Flip Animation Effect */
+.rotate-y-180 {
+  transform-origin: center;
+  animation: flipCard 2s ease-in-out forwards;
+}
+
+@keyframes flipCard {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(180deg);
+  }
+}
+
+/* Fade-In Effect for Flipped Content */
+.fade-in-content {
+  opacity: 0;
+  animation: fadeInContent 1.5s ease-in forwards;
+}
+
+@keyframes fadeInContent {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}

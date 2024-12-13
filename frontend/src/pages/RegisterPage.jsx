@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { registerUser } from "../services/authService";
+import { registerUser, registerFaceData } from "../services/authService";
 
 const RegistrationPage = () => {
   const [email, setEmail] = useState("");
@@ -11,7 +11,9 @@ const RegistrationPage = () => {
   const [loading, setLoading] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
+  const navigate = useNavigate();
   const videoRef = useRef(null);
+  const canvasRef = useRef(null);
 
   const startCamera = async () => {
     try {
@@ -44,7 +46,26 @@ const RegistrationPage = () => {
     }
     // Clean up when component unmounts
     return stopCamera;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFlipped]);
+
+  const captureFaceImage = async () => {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+
+    const context = canvas.getContext("2d");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Convert the image to base64
+    let faceData = canvas.toDataURL("image/png");
+
+    // Remove the metadata prefix
+    faceData = faceData.replace(/^data:image\/png;base64,/, "");
+
+    return faceData;
+  };
 
   const handleEnrollFace = async () => {
     setLoading(true);
@@ -52,16 +73,28 @@ const RegistrationPage = () => {
     setSuccess("");
 
     try {
-      // Placeholder logic for enrolling the face
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const face_data = await captureFaceImage();
+
+      // Correctly structure the request payload
+      const userFaceData = {
+        email: email,
+        face_data: face_data,
+      };
+
+      // Send the payload to the backend
+      const data = await registerFaceData(userFaceData);
+
       setSuccess("Face enrolled successfully!");
+      localStorage.setItem("token", data.token);
+      stopCamera();
+      navigate("/");
     } catch (err) {
+      console.error("Error enrolling face:", err);
       setError("Failed to enroll the face. Please try again.");
     } finally {
       setLoading(false);
     }
   };
-  // const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -80,12 +113,12 @@ const RegistrationPage = () => {
 
       // Clear input fields after a short delay to show the flip animation
       setTimeout(() => {
-        setEmail("");
         setPassword("");
         setConfirmPassword("");
         setSuccess("");
       }, 1000);
     } catch (err) {
+      console.log(err);
       setError("Registration failed. Please try again.");
     } finally {
       setLoading(false);
@@ -202,6 +235,7 @@ const RegistrationPage = () => {
                 style={{ transform: "scaleX(-1)", backgroundColor: "black" }}
                 className="w-full h-full object-cover"
               />
+              <canvas ref={canvasRef} style={{ display: "none" }} />
             </div>
             {error && (
               <div className="mb-4 p-3 text-red-700 bg-red-100 rounded-lg">
