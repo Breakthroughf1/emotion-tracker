@@ -1,7 +1,21 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+
+import { logoutUser } from "../services/authService";
 
 const Navbar = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    try {
+      logoutUser();
+      // Redirect to login page
+      navigate("/login");
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   return (
     <nav className="bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 shadow">
       <div className="max-w-screen-xl mx-auto px-4 flex justify-between items-center h-16">
@@ -18,12 +32,12 @@ const Navbar = () => {
           >
             Profile
           </Link>
-          <Link
-            to="/logout"
+          <button
+            onClick={handleLogout}
             className="text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-500"
           >
             Logout
-          </Link>
+          </button>
         </div>
       </div>
     </nav>
