@@ -1,6 +1,11 @@
 // App.js
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 
 import LoginPage from "./pages/LoginPage";
 import RegistrationPage from "./pages/RegisterPage";
@@ -12,10 +17,24 @@ import NotFoundPage from "./pages/NotFoundPage";
 import PrivateRoute from "./components/Routes/PrivateRoute";
 import PublicRoute from "./components/Routes/PublicRoute";
 
+import { getCurrentUser } from "./services/authService";
+
 const App = () => {
+  const getDashboardRoute = () => {
+    const currentUser = getCurrentUser();
+
+    if (!currentUser) return "/login"; // Redirect unauthenticated users to login
+    return currentUser.role ? "/admin-dashboard" : "/user-dashboard";
+  };
+
   return (
     <Router>
       <Routes>
+        {/* Root Route: Redirect to Dashboard */}
+        <Route
+          path="/"
+          element={<Navigate to={getDashboardRoute()} replace />}
+        />
         {/* Public Routes */}
         <Route element={<PublicRoute />}>
           <Route path="/login" element={<LoginPage />} />
