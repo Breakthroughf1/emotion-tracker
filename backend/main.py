@@ -1,11 +1,9 @@
-# Database connection
+import os
 import sqlalchemy
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
 from config import database
-# Routes
-from routes.auth_routes import auth_router
+from importlib import import_module
 
 app = FastAPI()
 
@@ -19,7 +17,16 @@ app.add_middleware(
 )
 
 metadata = sqlalchemy.MetaData()
-app.include_router(auth_router, prefix="/auth")
+
+# Dynamically include all routers from the routes folder
+for filename in os.listdir("routes"):
+    if filename.endswith("_routes.py"):
+        module_name = filename[:-3]  # Remove .py extension
+        prefix = module_name.split("_")[0]  # Extract the prefix before _
+        module = import_module(f"routes.{module_name}")
+        if hasattr(module, f"{prefix}_router"):
+            router = getattr(module, f"{prefix}_router")
+            app.include_router(router, prefix=f"/{prefix}")
 
 
 @app.on_event("startup")
@@ -28,15 +35,15 @@ async def startup():
     # Ensure the table exists
     create_users_table = """
         CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    isAdmin BOOLEAN NOT NULL DEFAULT FALSE,
-    account_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    face_data_path VARCHAR(255),
-    last_login TIMESTAMP
-)
-        """
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(100) NOT NULL UNIQUE,
+            password VARCHAR(255) NOT NULL,
+            isAdmin BOOLEAN NOT NULL DEFAULT FALSE,
+            account_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            face_data_path VARCHAR(255),
+            last_login TIMESTAMP
+        )
+    """
     await database.execute(create_users_table)
 
 
