@@ -43,7 +43,7 @@ const App = () => {
         </Route>
 
         {/* Private Routes */}
-        <Route element={<PrivateRoute allowedRoles={[false]} />}>
+        <Route element={<PrivateRoute allowedRoles={[false, true]} />}>
           <Route path="/user-dashboard" element={<UserDashboardPage />} />
         </Route>
         <Route element={<PrivateRoute allowedRoles={[true]} />}>

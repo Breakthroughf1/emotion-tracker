@@ -15,11 +15,7 @@ const PrivateRoute = ({ allowedRoles }) => {
 
   if (!allowedRoles.includes(userRole)) {
     // Redirect unauthorized users based on their role
-    return userRole ? (
-      <Navigate to="/admin-dashboard" replace />
-    ) : (
-      <Navigate to="/user-dashboard" replace />
-    );
+    return <Navigate to="/user-dashboard" replace />;
   }
 
   // Render nested routes if authenticated and authorized
