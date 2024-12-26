@@ -120,16 +120,3 @@ async def login(user_data: LoginRequest):
     token = create_jwt(payload)
 
     return {"token": token}
-
-
-@auth_router.get("/users/me")
-async def get_user_details(email: str = Depends(get_current_user)):
-    query = "SELECT id, email, isAdmin, account_created, face_data_path, last_login FROM users WHERE email = :email"
-    user = await database.fetch_one(query, {"email": email})
-    print(user)
-    if user is None:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found",
-        )
-    return user
