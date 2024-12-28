@@ -96,7 +96,7 @@
 
 ```bash
 
-git clone https://github.com/your-username/emotion-tracker.git
+git clone https://github.com/Breakthrough-pvt-ltd/emotion-tracker.git
 
 cd emotion-tracker
 
