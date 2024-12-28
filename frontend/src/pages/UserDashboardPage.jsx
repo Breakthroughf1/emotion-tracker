@@ -1,7 +1,9 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import * as faceapi from "face-api.js";
+import { addEmotion, getEmotion } from "../services/userService";
+import { getCurrentUser } from "../services/authService";
 
 const UserDashboardPage = () => {
   const [emotion, setEmotion] = useState("");
@@ -9,17 +11,41 @@ const UserDashboardPage = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState("");
   const [confirmEmotion, setConfirmEmotion] = useState(false);
+  const [userId, setUserId] = useState(null);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+
+  // Load user details and fetch emotion history
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      setUserId(user.id); // Assumes the token contains an `id` field
+      fetchEmotionHistory(user.id); // Fetch emotion history
+    }
+  }, []);
+
+  // Fetch emotion history from the backend
+  const fetchEmotionHistory = async (userId) => {
+    try {
+      const response = await getEmotion(userId);
+      setEmotionHistory(
+        response.emotion.map((record, index) => ({
+          id: index + 1,
+          ...record,
+        }))
+      );
+    } catch (error) {
+      console.error("Failed to fetch emotion history", error);
+      setError("Error fetching emotion history. Please try again.");
+    }
+  };
 
   // Load face-api models
   const loadModels = async () => {
     try {
       await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
-      console.log("Model 1 loaded.");
       await faceapi.nets.faceExpressionNet.loadFromUri("/models");
-      console.log("Face-api models loaded");
     } catch (err) {
       console.error("Failed to load face-api models", err);
       setError("Error loading AI models.");
@@ -76,36 +102,37 @@ const UserDashboardPage = () => {
   };
 
   // Confirm and save emotion
-  const confirmAndSaveEmotion = () => {
-    setEmotionHistory((prev) => [
-      ...prev,
-      {
-        id: prev.length + 1,
-        emotion: emotion,
-        timestamp: new Date().toLocaleString(),
-      },
-    ]);
-    setConfirmEmotion(false);
-    stopRecording();
+  const confirmAndSaveEmotion = async () => {
+    try {
+      if (userId) {
+        // Send emotion to the backend
+        await addEmotion({ userId, emotion });
+        console.log("Emotion saved successfully");
+
+        // Refresh the emotion history
+        fetchEmotionHistory(userId);
+      } else {
+        console.error("User ID is missing. Unable to save emotion.");
+      }
+
+      setConfirmEmotion(false);
+      stopRecording();
+      setError("");
+    } catch (error) {
+      console.error("Failed to save emotion", error);
+      setError("Failed to save emotion. Please try again.");
+    }
   };
 
   return (
     <div className="max-h-screen flex flex-col overflow-hidden">
-      {/* Navbar */}
       <Navbar />
-
-      {/* Main Content Area */}
       <div className="flex flex-1">
-        {/* Sidebar */}
         <Sidebar />
-
-        {/* User Dashboard */}
         <main className="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
             Welcome to Your Dashboard
           </h1>
-
-          {/* Emotion Recording Section */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
               Record Your Emotion
@@ -138,8 +165,6 @@ const UserDashboardPage = () => {
             </div>
             {error && <p className="text-red-500 mt-4">{error}</p>}
           </div>
-
-          {/* Emotion History Section */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
               Emotion History
@@ -164,7 +189,7 @@ const UserDashboardPage = () => {
                       {record.emotion}
                     </td>
                     <td className="border-b dark:border-gray-700 p-4">
-                      {record.timestamp}
+                      {new Date(record.timestamp).toLocaleString()}
                     </td>
                   </tr>
                 ))}
@@ -178,8 +203,6 @@ const UserDashboardPage = () => {
           </div>
         </main>
       </div>
-
-      {/* Confirm Emotion Modal */}
       {confirmEmotion && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg text-center">
