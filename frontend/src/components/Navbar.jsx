@@ -1,18 +1,35 @@
-import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
-import { logoutUser } from "../services/authService";
+import { logoutUser, getCurrentUser } from "../services/authService";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      setIsAdmin(user.role); // Properly check if the user's role is "admin"
+    }
+  }, []);
 
   const handleLogout = () => {
     try {
       logoutUser();
-      // Redirect to login page
-      navigate("/login");
+      navigate("/login"); // Redirect to login page
     } catch (err) {
       console.log(err);
+    }
+  };
+
+  const handleAdminToggle = () => {
+    if (location.pathname === "/admin-dashboard") {
+      navigate("/user-dashboard"); // Redirect to user dashboard
+    } else {
+      navigate("/admin-dashboard"); // Redirect to admin dashboard
     }
   };
 
@@ -38,6 +55,16 @@ const Navbar = () => {
           >
             Logout
           </button>
+          {isAdmin && (
+            <button
+              className="text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-500"
+              onClick={handleAdminToggle}
+            >
+              {location.pathname === "/admin-dashboard"
+                ? "View as Member"
+                : "Go to Admin Dashboard"}
+            </button>
+          )}
         </div>
       </div>
     </nav>
