@@ -3,7 +3,7 @@ from typing import Optional
 
 
 class LoginRequest(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
 
