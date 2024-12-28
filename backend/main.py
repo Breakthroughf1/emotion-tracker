@@ -44,12 +44,30 @@ async def startup():
             last_login TIMESTAMP
         )
     """
+    create_emotion_table = """
+    CREATE TABLE IF NOT EXISTS emotions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    emotion VARCHAR(50) NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+    """
     await database.execute(create_users_table)
+    await database.execute(create_emotion_table)
 
 
 @app.on_event("shutdown")
 async def shutdown():
     await database.disconnect()
+
+
+# Using FastAPI instance
+@app.get("/url-list")
+def get_all_urls():
+    url_list = [{"path": route.path, "name": route.name} for route in app.routes]
+    return url_list
 
 
 print("Database connection successful")
