@@ -34,7 +34,7 @@ async def get_emotion(user_id: str = Query(..., description="The ID of the user 
     """
 
     query = """
-        SELECT id, emotion, timestamp FROM emotions WHERE user_id = :user_id
+        SELECT ROW_NUMBER() OVER (ORDER BY timestamp ASC) AS id, emotion, timestamp FROM emotions WHERE user_id = :user_id
     """
     try:
         rows = await database.fetch_all(query, {"user_id": user_id})
