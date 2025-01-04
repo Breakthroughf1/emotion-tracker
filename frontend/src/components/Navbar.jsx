@@ -34,12 +34,6 @@ const Navbar = ({ isAdmin }) => {
           EmotionTracker
         </Link>
         <div className="flex space-x-4">
-          <Link
-            to="/profile"
-            className="text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-500"
-          >
-            Profile
-          </Link>
           <button
             onClick={handleLogout}
             className="text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-500"

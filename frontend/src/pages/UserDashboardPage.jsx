@@ -191,12 +191,14 @@ const UserDashboardPage = () => {
             )}
             <button
               className={`bg-blue-500 text-white px-4 py-2 rounded-lg ${
-                countdown > 0 ? "opacity-50 cursor-not-allowed" : ""
+                countdown > 0 || isRecording
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
               }`}
               onClick={
                 isRecording && countdown === 0 ? stopRecording : startRecording
               }
-              disabled={countdown > 0}
+              disabled={countdown > 0 || isRecording}
             >
               {isRecording ? "Stop Recording" : "Start Recording"}
             </button>
