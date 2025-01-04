@@ -1,20 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 
-import { logoutUser, getCurrentUser } from "../services/authService";
+import { logoutUser } from "../services/authService";
 
-const Navbar = () => {
+const Navbar = ({ isAdmin }) => {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    const user = getCurrentUser();
-    if (user) {
-      setIsAdmin(user.role); // Properly check if the user's role is "admin"
-    }
-  }, []);
 
   const handleLogout = () => {
     try {
