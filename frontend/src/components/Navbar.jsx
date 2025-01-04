@@ -26,10 +26,10 @@ const Navbar = () => {
   };
 
   const handleAdminToggle = () => {
-    if (location.pathname === "/admin-dashboard") {
-      navigate("/user-dashboard"); // Redirect to user dashboard
+    if (location.pathname === "/dashboard-admin") {
+      navigate("/dashboard-user"); // Redirect to user dashboard
     } else {
-      navigate("/admin-dashboard"); // Redirect to admin dashboard
+      navigate("/dashboard-admin"); // Redirect to admin dashboard
     }
   };
 
@@ -60,7 +60,7 @@ const Navbar = () => {
               className="text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-500"
               onClick={handleAdminToggle}
             >
-              {location.pathname === "/admin-dashboard"
+              {location.pathname === "/dashboard-admin"
                 ? "View as Member"
                 : "Go to Admin Dashboard"}
             </button>
