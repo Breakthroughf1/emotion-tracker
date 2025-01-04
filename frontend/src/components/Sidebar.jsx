@@ -1,46 +1,92 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
+import { FaHome, FaCogs, FaChartLine, FaQuestionCircle } from "react-icons/fa";
 
-const Sidebar = () => {
+const Sidebar = ({ isAdmin }) => {
   return (
-    <aside className="w-64 bg-white dark:bg-gray-800 min-h-screen border-r border-gray-200 dark:border-gray-700 shadow-lg">
-      <div className="p-6">
+    <aside className="w-64 bg-white dark:bg-gray-800 min-h-screen border-gray-200 dark:border-gray-700 shadow-lg pt-16">
+      <div className="p-6 pl-16">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
           Dashboard
         </h2>
       </div>
       <ul className="space-y-2">
+        {/* Overview Link */}
         <li>
-          <Link
-            to="/dashboard"
-            className="block px-4 py-2 text-gray-700 hover:bg-blue-100 dark:text-gray-300 dark:hover:bg-gray-700"
+          <NavLink
+            to="/"
+            isActive={(match, location) =>
+              match ||
+              location.pathname === "/dashboard-admin" ||
+              location.pathname === "/dashboard-user"
+            }
+            className={({ isActive }) =>
+              `block pr-4 pl-20 py-2 text-gray-300 ${
+                isActive
+                  ? "dark:bg-gray-900 dark:text-white"
+                  : "hover:text-blue-600"
+              }`
+            }
+            title="Go to Overview"
           >
+            <FaHome className="inline mr-2" />
             Overview
-          </Link>
+          </NavLink>
         </li>
+
+        {/* Settings Link */}
         <li>
-          <Link
+          <NavLink
             to="/settings"
-            className="block px-4 py-2 text-gray-700 hover:bg-blue-100 dark:text-gray-300 dark:hover:bg-gray-700"
+            className={({ isActive }) =>
+              `block pr-4 pl-20 py-2 text-gray-300 ${
+                isActive
+                  ? "dark:bg-gray-900 dark:text-white"
+                  : "hover:text-blue-600"
+              }`
+            }
+            title="Settings"
           >
+            <FaCogs className="inline mr-2" />
             Settings
-          </Link>
+          </NavLink>
         </li>
+
+        {/* Analytics Link */}
+        {isAdmin && (
+          <li>
+            <NavLink
+              to="/analytics"
+              className={({ isActive }) =>
+                `block pr-4 pl-20 py-2 text-gray-300 ${
+                  isActive
+                    ? "dark:bg-gray-900 dark:text-white"
+                    : "hover:text-blue-600"
+                }`
+              }
+              title="Analytics"
+            >
+              <FaChartLine className="inline mr-2" />
+              Analytics
+            </NavLink>
+          </li>
+        )}
+        {/* Help Link */}
         <li>
-          <Link
-            to="/analytics"
-            className="block px-4 py-2 text-gray-700 hover:bg-blue-100 dark:text-gray-300 dark:hover:bg-gray-700"
-          >
-            Analytics
-          </Link>
-        </li>
-        <li>
-          <Link
+          <NavLink
             to="/help"
-            className="block px-4 py-2 text-gray-700 hover:bg-blue-100 dark:text-gray-300 dark:hover:bg-gray-700"
+            className={({ isActive }) =>
+              `block pr-4 pl-20 py-2 text-gray-300 ${
+                isActive
+                  ? "dark:bg-gray-900 dark:text-white"
+                  : "hover:text-blue-600"
+              }`
+            }
+            title="Help & Support"
           >
+            <FaQuestionCircle className="inline mr-2" />
             Help
-          </Link>
+          </NavLink>
         </li>
       </ul>
     </aside>
