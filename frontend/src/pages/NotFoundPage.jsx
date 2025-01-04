@@ -18,7 +18,7 @@ const NotFoundPage = () => {
 
         {/* Button to navigate back */}
         <Link
-          to="/user-dashboard"
+          to="/"
           className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 focus:outline-none dark:bg-blue-500 dark:hover:bg-blue-600"
         >
           Go to Homepage
