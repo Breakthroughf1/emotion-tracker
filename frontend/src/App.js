@@ -17,6 +17,7 @@ import PublicRoute from "./components/Routes/PublicRoute";
 import { getCurrentUser } from "./services/authService";
 import HelpPage from "./pages/HelpPage";
 import Layout from "./components/Layout"; // Import the Layout component
+import AnalyticsPage from "./pages/AnalyticsPage";
 
 const App = () => {
   const getDashboardRoute = () => {
@@ -41,7 +42,7 @@ const App = () => {
           <Route path="/forgot-password" element={<ForgetPasswordPage />} />
         </Route>
 
-        {/* Private Routes with Layout Component */}
+        {/* Private Routes for both User and Admin */}
         <Route element={<PrivateRoute allowedRoles={[false, true]} />}>
           <Route
             path="/dashboard-user"
@@ -59,8 +60,17 @@ const App = () => {
               </Layout>
             }
           />
+          <Route
+            path="/analytics"
+            element={
+              <Layout>
+                <AnalyticsPage />
+              </Layout>
+            }
+          />
         </Route>
 
+        {/* Private Route for Admin */}
         <Route element={<PrivateRoute allowedRoles={[true]} />}>
           <Route
             path="/dashboard-admin"
@@ -70,17 +80,9 @@ const App = () => {
               </Layout>
             }
           />
-          <Route
-            path="/help"
-            element={
-              <Layout>
-                <HelpPage />
-              </Layout>
-            }
-          />
         </Route>
 
-        {/* Default Route */}
+        {/* Default Route for 404 */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
