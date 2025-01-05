@@ -32,7 +32,18 @@ const AdminDashboardPage = () => {
           Emotion History by Users
         </h2>
         {loading ? (
-          <p className="text-gray-600 dark:text-gray-400 mt-4">Loading...</p>
+          <div className="animate-pulse">
+            {[...Array(3)].map((_, index) => (
+              <div key={index} className="mb-6">
+                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+              </div>
+            ))}
+          </div>
         ) : error ? (
           <p className="text-red-600 dark:text-red-400 mt-4">{error}</p>
         ) : emotionData.length === 0 ? (
