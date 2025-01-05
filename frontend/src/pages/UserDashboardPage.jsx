@@ -257,11 +257,6 @@ const UserDashboardPage = () => {
               </tbody>
             </table>
           )}
-          {emotionHistory.length === 0 && !loadingHistory && (
-            <p className="text-gray-600 dark:text-gray-400 mt-4">
-              No emotions recorded yet.
-            </p>
-          )}
         </div>
       </main>
       {confirmEmotion && (
