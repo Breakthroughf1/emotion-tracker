@@ -17,10 +17,10 @@ const Navbar = ({ isAdmin }) => {
   };
 
   const handleAdminToggle = () => {
-    if (location.pathname === "/dashboard-admin") {
-      navigate("/dashboard-user"); // Redirect to user dashboard
+    if (location.pathname === "/admin-dashboard") {
+      navigate("/user-dashboard"); // Redirect to user dashboard
     } else {
-      navigate("/dashboard-admin"); // Redirect to admin dashboard
+      navigate("/admin-dashboard"); // Redirect to admin dashboard
     }
   };
 
@@ -34,6 +34,12 @@ const Navbar = ({ isAdmin }) => {
           EmotionTracker
         </Link>
         <div className="flex space-x-4">
+          <Link
+            to="/profile"
+            className="text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-500"
+          >
+            Profile
+          </Link>
           <button
             onClick={handleLogout}
             className="text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-500"
@@ -45,7 +51,7 @@ const Navbar = ({ isAdmin }) => {
               className="text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-500"
               onClick={handleAdminToggle}
             >
-              {location.pathname === "/dashboard-admin"
+              {location.pathname === "/admin-dashboard"
                 ? "View as Member"
                 : "Go to Admin Dashboard"}
             </button>

@@ -17,8 +17,8 @@ const Sidebar = ({ isAdmin }) => {
             to="/"
             isActive={(match, location) =>
               match ||
-              location.pathname === "/dashboard-admin" ||
-              location.pathname === "/dashboard-user"
+              location.pathname === "/admin-dashboard" ||
+              location.pathname === "/user-dashboard"
             }
             className={({ isActive }) =>
               `block pr-4 pl-20 py-2 text-gray-300 ${
