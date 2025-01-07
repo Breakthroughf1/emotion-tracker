@@ -6,24 +6,27 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import LoginPage from "./pages/LoginPage";
-import RegistrationPage from "./pages/RegisterPage";
-import ForgetPasswordPage from "./pages/ForgotPasswordPage";
 import UserDashboardPage from "./pages/UserDashboardPage";
-import AdminDashboardPage from "./pages/AdminDashboardPage";
-import NotFoundPage from "./pages/NotFoundPage";
+
 import PrivateRoute from "./components/Routes/PrivateRoute";
 import PublicRoute from "./components/Routes/PublicRoute";
 import { getCurrentUser } from "./services/authService";
 import HelpPage from "./pages/HelpPage";
 import Layout from "./components/Layout"; // Import the Layout component
-import AnalyticsPage from "./pages/AnalyticsPage";
+import AnalyticsPage from "./pages/private/AnalyticsPage";
+import ProfilePage from "./pages/ProfilePage";
+import LoginPage from "./pages/public/LoginPage";
+import RegistrationPage from "./pages/public/RegisterPage";
+import ForgetPasswordPage from "./pages/public/ForgotPasswordPage";
+import AdminDashboardPage from "./pages/private/AdminDashboardPage";
+import NotFoundPage from "./pages/public/NotFoundPage";
+import SettingsPage from "./pages/public/SettingsPage";
 
 const App = () => {
   const getDashboardRoute = () => {
     const currentUser = getCurrentUser();
     if (!currentUser) return "/login"; // Redirect unauthenticated users to login
-    return currentUser.role ? "/dashboard-admin" : "/dashboard-user";
+    return currentUser.role ? "/admin-dashboard" : "/user-dashboard";
   };
 
   return (
@@ -45,7 +48,7 @@ const App = () => {
         {/* Private Routes for both User and Admin */}
         <Route element={<PrivateRoute allowedRoles={[false, true]} />}>
           <Route
-            path="/dashboard-user"
+            path="/user-dashboard"
             element={
               <Layout>
                 <UserDashboardPage />
@@ -61,10 +64,18 @@ const App = () => {
             }
           />
           <Route
-            path="/analytics"
+            path="/profile"
             element={
               <Layout>
-                <AnalyticsPage />
+                <ProfilePage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <Layout>
+                <SettingsPage />
               </Layout>
             }
           />
@@ -73,10 +84,18 @@ const App = () => {
         {/* Private Route for Admin */}
         <Route element={<PrivateRoute allowedRoles={[true]} />}>
           <Route
-            path="/dashboard-admin"
+            path="/admin-dashboard"
             element={
               <Layout>
                 <AdminDashboardPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <Layout>
+                <AnalyticsPage />
               </Layout>
             }
           />
