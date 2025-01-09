@@ -20,7 +20,6 @@ import RegistrationPage from "./pages/public/RegisterPage";
 import ForgetPasswordPage from "./pages/public/ForgotPasswordPage";
 import AdminDashboardPage from "./pages/private/AdminDashboardPage";
 import NotFoundPage from "./pages/public/NotFoundPage";
-import SettingsPage from "./pages/public/SettingsPage";
 
 const App = () => {
   const getDashboardRoute = () => {
@@ -68,14 +67,6 @@ const App = () => {
             element={
               <Layout>
                 <ProfilePage />
-              </Layout>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <Layout>
-                <SettingsPage />
               </Layout>
             }
           />
