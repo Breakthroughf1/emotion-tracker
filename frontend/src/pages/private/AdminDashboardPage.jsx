@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { getEmotion } from "../../services/adminService";
 
+const EMOTION_EMOJIS = {
+  happy: "😊",
+  sad: "😢",
+  angry: "😠",
+  surprised: "😲",
+  disgusted: "🤢",
+  neutral: "😐",
+  fearful: "😨",
+};
+
 const AdminDashboardPage = () => {
   const [emotionData, setEmotionData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,6 +81,7 @@ const AdminDashboardPage = () => {
                   {user.emotions.map((record, index) => (
                     <tr key={index}>
                       <td className="border-b dark:border-gray-700 p-4">
+                        {EMOTION_EMOJIS[record.emotion] || "❓"}{" "}
                         {record.emotion}
                       </td>
                       <td className="border-b dark:border-gray-700 p-4">

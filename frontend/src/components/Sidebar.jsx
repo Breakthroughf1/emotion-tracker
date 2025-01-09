@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { FaHome, FaCogs, FaChartLine, FaQuestionCircle } from "react-icons/fa";
+import { FaHome, FaChartLine, FaQuestionCircle } from "react-icons/fa";
 
 const Sidebar = ({ isAdmin }) => {
   return (
@@ -33,25 +33,6 @@ const Sidebar = ({ isAdmin }) => {
             Overview
           </NavLink>
         </li>
-
-        {/* Settings Link */}
-        <li>
-          <NavLink
-            to="/settings"
-            className={({ isActive }) =>
-              `block pr-4 pl-20 py-2 text-gray-300 ${
-                isActive
-                  ? "dark:bg-gray-900 dark:text-white"
-                  : "hover:text-blue-600"
-              }`
-            }
-            title="Settings"
-          >
-            <FaCogs className="inline mr-2" />
-            Settings
-          </NavLink>
-        </li>
-
         {/* Analytics Link */}
         {isAdmin && (
           <li>
