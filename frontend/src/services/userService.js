@@ -11,3 +11,17 @@ export const getEmotion = async (user_id) => {
   const response = await axios.get(`${API_URL}/get_emotion?user_id=${user_id}`);
   return response.data;
 };
+export const fetchEmotionAnalytics = async (user_id) => {
+  const response = await axios.get(
+    `${API_URL}/get_emotion_trends?user_id=${user_id}`
+  );
+  return response.data;
+};
+export const updateProfile = async (user_id) => {
+  const response = await axios.get(`${API_URL}/get_emotion?user_id=${user_id}`);
+  return response.data;
+};
+export const deleteAccount = async (user_id) => {
+  const response = await axios.get(`${API_URL}/get_emotion?user_id=${user_id}`);
+  return response.data;
+};
