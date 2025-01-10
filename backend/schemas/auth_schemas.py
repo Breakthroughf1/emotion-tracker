@@ -8,6 +8,7 @@ class LoginRequest(BaseModel):
 
 
 class RegisterRequest(BaseModel):
+    name: str
     email: EmailStr
     password: str
     isAdmin: Optional[bool] = False
