@@ -1,8 +1,10 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Header
 from sqlalchemy.exc import SQLAlchemyError
 from config import database
 from schemas.user_schemas import EmotionRequest
 from datetime import datetime, timedelta
+
+from utils.jwt_handler import decode_jwt
 
 user_router = APIRouter()
 
@@ -45,43 +47,6 @@ async def get_emotion(user_id: str = Query(..., description="The ID of the user 
         raise HTTPException(status_code=500, detail="Database error occurred") from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch emotion: {str(e)}")
-
-
-@user_router.get("/get_emotion_trends")
-async def get_emotion_trends(user_id: str = Query(..., description="The ID of the user to fetch emotion trends for")):
-    """
-    API to get emotional trends (time-based) for a specific user.
-    This includes emotion counts over time (e.g., daily or weekly).
-    """
-    query = """
-        SELECT emotion, DATE(timestamp) AS date, COUNT(*) AS count
-        FROM emotions
-        WHERE user_id = :user_id
-        GROUP BY emotion, date
-        ORDER BY date ASC
-    """
-    try:
-        rows = await database.fetch_all(query, {"user_id": user_id})
-
-        # Process the results to return useful data
-        trend_data = {}
-        for row in rows:
-            date = row['date']
-            emotion = row['emotion']
-            count = row['count']
-
-            if date not in trend_data:
-                trend_data[date] = {}
-
-            trend_data[date][emotion] = count
-
-        return {
-            "emotion_trends": trend_data
-        }
-    except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail="Database error occurred") from e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch emotion trends: {str(e)}")
 
 
 @user_router.get("/get_emotion_stats")
@@ -131,3 +96,36 @@ async def get_emotion_stats(
         raise HTTPException(status_code=500, detail="Database error occurred") from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch emotion stats: {str(e)}")
+
+
+@user_router.get("/get_user_details")
+async def get_user_details(authorization: str = Header(..., description="Authorization token")):
+    """
+    API to get user details from the database.
+    """
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authorization header")
+
+        # Extract token from header
+    token = authorization.split(" ")[1]
+
+    # Decode token to get email
+    user = decode_jwt(token)
+
+    # Query to fetch user details by email
+    query = """
+            SELECT user_id, name, email, created_at
+            FROM users
+            WHERE email = :email
+        """
+    try:
+        user = await database.fetch_one(query, {"email": user.email})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        return {"user_details": user}
+
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail="Database error occurred") from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch user details: {str(e)}")
