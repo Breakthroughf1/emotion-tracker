@@ -4,6 +4,7 @@ import { registerUser, registerFaceData } from "../../services/authService";
 
 const RegistrationPage = () => {
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -106,7 +107,7 @@ const RegistrationPage = () => {
     setError("");
     setSuccess("");
     try {
-      await registerUser({ email, password });
+      await registerUser({ name, email, password });
       setSuccess("Registration successful! Redirecting ...");
       // Trigger the flip animation
       setIsFlipped(true);
@@ -151,6 +152,23 @@ const RegistrationPage = () => {
               </div>
             )}
             <form onSubmit={handleRegister} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="name"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  User Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="John"
+                  required
+                  className="w-full p-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                />
+              </div>
               <div>
                 <label
                   htmlFor="email"
