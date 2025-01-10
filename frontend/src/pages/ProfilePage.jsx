@@ -29,7 +29,7 @@ const ProfilePage = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const currentUser = getCurrentUser();
+      const currentUser = getCurrentUser(true);
       setUser(currentUser);
       setEditProfile({
         email: currentUser?.email || "",
@@ -94,11 +94,32 @@ const ProfilePage = () => {
           <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
             Edit Profile
           </h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-gray-700 dark:text-gray-400 mb-2">
-                Profile Picture
-              </label>
+          <div className="space-y-6">
+            {/* Profile Image Section */}
+            <div className="relative w-32 h-32 mx-auto">
+              <img
+                src={editProfile.profilePic || "/default-profile.png"}
+                alt="Profile"
+                className="w-full h-full rounded-full object-cover border border-gray-300 dark:border-gray-600"
+              />
+              <button
+                className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full"
+                onClick={() =>
+                  document.getElementById("profileImageModal").showModal()
+                }
+              >
+                <i className="fas fa-camera"></i>
+              </button>
+            </div>
+
+            {/* Profile Image Modal */}
+            <dialog
+              id="profileImageModal"
+              className="rounded-lg shadow-lg p-6 bg-white dark:bg-gray-800"
+            >
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                Update Profile Picture
+              </h3>
               <input
                 type="file"
                 className="block w-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2"
@@ -109,39 +130,94 @@ const ProfilePage = () => {
                   })
                 }
               />
-            </div>
+              <div className="flex justify-end mt-4">
+                <button
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                  onClick={() =>
+                    document.getElementById("profileImageModal").close()
+                  }
+                >
+                  Close
+                </button>
+              </div>
+            </dialog>
+
+            {/* Name Field */}
             <div>
               <label className="block text-gray-700 dark:text-gray-400 mb-2">
                 Name
               </label>
-              <input
-                type="text"
-                value={editProfile.name}
-                className="block w-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2"
-                onChange={(e) =>
-                  setEditProfile({ ...editProfile, name: e.target.value })
-                }
-              />
+              {editProfile.isEditing ? (
+                <input
+                  type="text"
+                  value={editProfile.name}
+                  placeholder={user.name}
+                  className="block w-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2"
+                  onChange={(e) =>
+                    setEditProfile({ ...editProfile, name: e.target.value })
+                  }
+                />
+              ) : (
+                <p className="text-gray-700 dark:text-gray-300">
+                  {user.name || "N/A"}
+                </p>
+              )}
             </div>
+
+            {/* Email Field */}
             <div>
               <label className="block text-gray-700 dark:text-gray-400 mb-2">
                 Email
               </label>
-              <input
-                type="email"
-                value={editProfile.email}
-                className="block w-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2"
-                onChange={(e) =>
-                  setEditProfile({ ...editProfile, email: e.target.value })
-                }
-              />
+              {editProfile.isEditing ? (
+                <input
+                  type="email"
+                  value={editProfile.email}
+                  placeholder={user.email}
+                  className="block w-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2"
+                  onChange={(e) =>
+                    setEditProfile({ ...editProfile, email: e.target.value })
+                  }
+                />
+              ) : (
+                <p className="text-gray-700 dark:text-gray-300">
+                  {user.email || "N/A"}
+                </p>
+              )}
             </div>
+
+            {/* Update Profile Button */}
             <button
-              className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
-              onClick={handleUpdate}
+              className={
+                editProfile.isEditing
+                  ? "w-2/5 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 mx-5"
+                  : "w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
+              }
+              onClick={() => {
+                if (editProfile.isEditing) {
+                  handleUpdate();
+                  setEditProfile({ ...editProfile, isEditing: false });
+                } else {
+                  setEditProfile({ ...editProfile, isEditing: true });
+                }
+              }}
             >
-              Update Profile
+              {editProfile.isEditing ? "Submit" : "Update Profile"}
             </button>
+            {editProfile.isEditing && (
+              <button
+                className={
+                  editProfile.isEditing
+                    ? "w-2/5 bg-red-500 text-white py-2 rounded-lg hover:hover:bg-red-600 mx-5"
+                    : "w-full bg-red-500 text-white py-2 rounded-lg hover:hover:bg-red-600"
+                }
+                onClick={() => {
+                  setEditProfile({ ...editProfile, isEditing: false });
+                }}
+              >
+                {editProfile.isEditing && "cancel"}
+              </button>
+            )}
             <button
               className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600"
               onClick={handleDeleteAccount}
@@ -150,7 +226,6 @@ const ProfilePage = () => {
             </button>
           </div>
         </div>
-
         {/* Right Sidebar: Emotion Analytics */}
         <div className="col-span-2 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
