@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
+import Modal from "react-modal";
+import { FaCamera } from "react-icons/fa";
 import {
   updateProfile,
   deleteAccount,
   fetchEmotionAnalytics,
 } from "../services/userService";
-import { getCurrentUser } from "../services/authService";
+import { getCurrentUserDetails } from "../services/authService";
 import {
-  Chart,
+  Chart as ChartJS,
   BarElement,
   CategoryScale,
   LinearScale,
@@ -15,29 +17,58 @@ import {
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
 
-Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+// Register Chart.js modules
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+
+// Modal styles
+const modalStyles = {
+  overlay: {
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    backdropFilter: "blur(10px)",
+    zIndex: 1000,
+  },
+  content: {
+    top: "50%",
+    left: "50%",
+    right: "auto",
+    bottom: "auto",
+    marginRight: "-50%",
+    transform: "translate(-50%, -50%)",
+    padding: "2rem",
+    background: "#1F2937", // Tailwind's dark-gray
+    borderRadius: "12px",
+    border: "none",
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+    width: "90%",
+    maxWidth: "400px",
+  },
+};
 
 const ProfilePage = () => {
   const [user, setUser] = useState({});
-  const [emotionData, setEmotionData] = useState({});
+  const [emotionData, setEmotionData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editProfile, setEditProfile] = useState({
+    id: "",
     email: "",
     name: "",
     profilePic: "",
+    isEditing: false,
   });
+  const [modalIsOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const currentUser = getCurrentUser(true);
-      setUser(currentUser);
-      setEditProfile({
-        email: currentUser?.email || "",
-        name: currentUser?.name || "",
-        profilePic: currentUser?.profilePic || "",
-      });
-
       try {
+        const currentUser = await getCurrentUserDetails();
+        setUser(currentUser);
+        setEditProfile({
+          id: currentUser?.id || "",
+          email: currentUser?.email || "",
+          name: currentUser?.name || "",
+          profilePic: currentUser?.face_data_path || "",
+        });
+
         const analytics = await fetchEmotionAnalytics(currentUser?.id);
         setEmotionData({
           labels: analytics.emotion_stats.map((stat) => stat.emotion),
@@ -48,7 +79,7 @@ const ProfilePage = () => {
           negativeCount: analytics.negative_count,
         });
       } catch (error) {
-        console.error("Error fetching emotion analytics:", error);
+        console.error("Error fetching user data or emotion analytics:", error);
       } finally {
         setLoading(false);
       }
@@ -67,8 +98,10 @@ const ProfilePage = () => {
       }
       await updateProfile(formData);
       alert("Profile updated successfully!");
+      setEditProfile({ ...editProfile, isEditing: false });
     } catch (error) {
       console.error("Error updating profile:", error);
+      alert("Failed to update profile.");
     }
   };
 
@@ -77,11 +110,15 @@ const ProfilePage = () => {
       try {
         await deleteAccount(user.id);
         alert("Account deleted successfully!");
+        // Redirect user or take other necessary actions here
       } catch (error) {
         console.error("Error deleting account:", error);
+        alert("Failed to delete account.");
       }
     }
   };
+
+  const closeModal = () => setIsOpen(false);
 
   return (
     <main className="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
@@ -89,7 +126,7 @@ const ProfilePage = () => {
         Profile
       </h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Sidebar: User Options */}
+        {/* Left Sidebar: Edit Profile */}
         <div className="col-span-1 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
             Edit Profile
@@ -98,31 +135,34 @@ const ProfilePage = () => {
             {/* Profile Image Section */}
             <div className="relative w-32 h-32 mx-auto">
               <img
-                src={editProfile.profilePic || "/default-profile.png"}
+                src={
+                  editProfile.profilePic instanceof File
+                    ? URL.createObjectURL(editProfile.profilePic)
+                    : editProfile.profilePic || "/default-profile.png"
+                }
                 alt="Profile"
-                className="w-full h-full rounded-full object-cover border border-gray-300 dark:border-gray-600"
+                className="w-32 h-32 rounded-full border border-gray-300"
               />
               <button
                 className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full"
-                onClick={() =>
-                  document.getElementById("profileImageModal").showModal()
-                }
+                onClick={() => setIsOpen(true)}
               >
-                <i className="fas fa-camera"></i>
+                <FaCamera />
               </button>
             </div>
-
-            {/* Profile Image Modal */}
-            <dialog
-              id="profileImageModal"
-              className="rounded-lg shadow-lg p-6 bg-white dark:bg-gray-800"
+            {/* Modal for updating profile picture */}
+            <Modal
+              isOpen={modalIsOpen}
+              onRequestClose={closeModal}
+              style={modalStyles}
+              ariaHideApp={false}
             >
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+              <h3 className="text-lg font-bold text-white mb-4">
                 Update Profile Picture
               </h3>
               <input
                 type="file"
-                className="block w-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2"
+                accept="image/*"
                 onChange={(e) =>
                   setEditProfile({
                     ...editProfile,
@@ -130,96 +170,58 @@ const ProfilePage = () => {
                   })
                 }
               />
-              <div className="flex justify-end mt-4">
+              <div className="flex justify-between mt-4">
                 <button
-                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-                  onClick={() =>
-                    document.getElementById("profileImageModal").close()
-                  }
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+                  onClick={closeModal}
                 >
-                  Close
+                  Cancel
+                </button>
+                <button
+                  className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+                  onClick={closeModal}
+                >
+                  Save
                 </button>
               </div>
-            </dialog>
+            </Modal>
 
-            {/* Name Field */}
+            {/* Name and Email Fields */}
             <div>
               <label className="block text-gray-700 dark:text-gray-400 mb-2">
                 Name
               </label>
-              {editProfile.isEditing ? (
-                <input
-                  type="text"
-                  value={editProfile.name}
-                  placeholder={user.name}
-                  className="block w-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2"
-                  onChange={(e) =>
-                    setEditProfile({ ...editProfile, name: e.target.value })
-                  }
-                />
-              ) : (
-                <p className="text-gray-700 dark:text-gray-300">
-                  {user.name || "N/A"}
-                </p>
-              )}
+              <input
+                type="text"
+                value={editProfile.name}
+                className="block w-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border rounded-lg px-4 py-2"
+                onChange={(e) =>
+                  setEditProfile({ ...editProfile, name: e.target.value })
+                }
+              />
             </div>
-
-            {/* Email Field */}
             <div>
               <label className="block text-gray-700 dark:text-gray-400 mb-2">
                 Email
               </label>
-              {editProfile.isEditing ? (
-                <input
-                  type="email"
-                  value={editProfile.email}
-                  placeholder={user.email}
-                  className="block w-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2"
-                  onChange={(e) =>
-                    setEditProfile({ ...editProfile, email: e.target.value })
-                  }
-                />
-              ) : (
-                <p className="text-gray-700 dark:text-gray-300">
-                  {user.email || "N/A"}
-                </p>
-              )}
+              <input
+                type="email"
+                value={editProfile.email}
+                className="block w-full text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border rounded-lg px-4 py-2"
+                onChange={(e) =>
+                  setEditProfile({ ...editProfile, email: e.target.value })
+                }
+              />
             </div>
-
-            {/* Update Profile Button */}
+            {/* Action Buttons */}
             <button
-              className={
-                editProfile.isEditing
-                  ? "w-2/5 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 mx-5"
-                  : "w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
-              }
-              onClick={() => {
-                if (editProfile.isEditing) {
-                  handleUpdate();
-                  setEditProfile({ ...editProfile, isEditing: false });
-                } else {
-                  setEditProfile({ ...editProfile, isEditing: true });
-                }
-              }}
+              className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
+              onClick={handleUpdate}
             >
-              {editProfile.isEditing ? "Submit" : "Update Profile"}
+              Update Profile
             </button>
-            {editProfile.isEditing && (
-              <button
-                className={
-                  editProfile.isEditing
-                    ? "w-2/5 bg-red-500 text-white py-2 rounded-lg hover:hover:bg-red-600 mx-5"
-                    : "w-full bg-red-500 text-white py-2 rounded-lg hover:hover:bg-red-600"
-                }
-                onClick={() => {
-                  setEditProfile({ ...editProfile, isEditing: false });
-                }}
-              >
-                {editProfile.isEditing && "cancel"}
-              </button>
-            )}
             <button
-              className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600"
+              className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 mt-2"
               onClick={handleDeleteAccount}
             >
               Delete Account
@@ -232,64 +234,39 @@ const ProfilePage = () => {
             Emotion Analytics
           </h2>
           {loading ? (
-            <p className="text-gray-700 dark:text-gray-300">Loading chart...</p>
+            <p className="text-gray-700 dark:text-gray-300">Loading...</p>
           ) : (
-            <div>
-              <div className="mb-6">
+            emotionData && (
+              <div>
                 <p className="text-gray-700 dark:text-gray-300">
                   <strong>Dominant Emotion:</strong>{" "}
                   {emotionData.dominantEmotion || "N/A"}
                 </p>
-                <p className="text-gray-700 dark:text-gray-300">
-                  <strong>Mood Balance:</strong>{" "}
-                  {emotionData.moodBalance || "N/A"}
-                </p>
-                <p className="text-gray-700 dark:text-gray-300">
-                  <strong>Positive Emotion Count:</strong>{" "}
-                  {emotionData.positiveCount || 0}
-                </p>
-                <p className="text-gray-700 dark:text-gray-300">
-                  <strong>Negative Emotion Count:</strong>{" "}
-                  {emotionData.negativeCount || 0}
-                </p>
-              </div>
-              <div className="h-80">
-                <Bar
-                  data={{
-                    labels: emotionData.labels,
-                    datasets: [
-                      {
-                        label: "Emotion Counts",
-                        data: emotionData.data,
-                        backgroundColor: [
-                          "#4CAF50",
-                          "#FF5722",
-                          "#FFC107",
-                          "#2196F3",
-                          "#9E9E9E",
-                        ],
-                      },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        display: true,
-                        position: "top",
-                      },
-                      tooltip: {
-                        callbacks: {
-                          label: (context) =>
-                            `${context.label}: ${context.raw} occurrences`,
+                <div className="h-80">
+                  <Bar
+                    data={{
+                      labels: emotionData.labels,
+                      datasets: [
+                        {
+                          label: "Emotion Counts",
+                          data: emotionData.data,
+                          backgroundColor: [
+                            "#4CAF50",
+                            "#FF5722",
+                            "#FFC107",
+                            "#2196F3",
+                          ],
                         },
-                      },
-                    },
-                  }}
-                />
+                      ],
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                    }}
+                  />
+                </div>
               </div>
-            </div>
+            )
           )}
         </div>
       </div>
