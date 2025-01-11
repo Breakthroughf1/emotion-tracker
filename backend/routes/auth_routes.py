@@ -40,8 +40,8 @@ async def register(user_data: RegisterRequest):
     user_data.password = hashed_password  # password hashed version
 
     query = """
-        INSERT INTO users (email, password, isAdmin)
-        VALUES (:email, :password, :isAdmin)
+        INSERT INTO users (name, email, password, isAdmin)
+        VALUES (:name, :email, :password, :isAdmin)
     """
     try:
         await database.execute(query, user_data.dict())
@@ -51,7 +51,7 @@ async def register(user_data: RegisterRequest):
             raise HTTPException(status_code=400, detail="Email already registered")
         else:
             print(f"Error occurred: {e}")  # For debugging
-            raise HTTPException(status_code=500, detail="Internal Server Error")
+            raise HTTPException(status_code=500, detail=f"Internal Server Error {e}")
 
 
 @auth_router.post("/register/face-data", response_model=TokenResponse)
