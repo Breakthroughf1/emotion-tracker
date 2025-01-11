@@ -2,6 +2,8 @@ import os
 import sqlalchemy
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.staticfiles import StaticFiles
+
 from config import database
 from importlib import import_module
 
@@ -15,6 +17,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.mount("/static", StaticFiles(directory="G:/emotion-tracker/backend"), name="static")
 
 metadata = sqlalchemy.MetaData()
 
