@@ -1,5 +1,8 @@
-from jose import JWTError, jwt
+from jose import JWTError, jwt, ExpiredSignatureError
 from datetime import datetime, timedelta
+
+from jose.exceptions import JWTClaimsError
+
 from config import settings
 
 SECRET_KEY = settings.SECRET_KEY
@@ -18,5 +21,11 @@ def create_jwt(data: dict, expires_delta: timedelta = None):
 def decode_jwt(token):
     try:
         return jwt.decode(token, SECRET_KEY, algorithms='HS256')
-    except JWTError:
-        return None
+    except ExpiredSignatureError:
+        return
+        print("Token has expired.")
+    except JWTClaimsError:
+        print("Invalid claims. Please check the audience and issuer.")
+    except JWTError as e:
+        print(f"JWT error occurred: {e}")
+    return None
