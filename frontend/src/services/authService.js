@@ -56,12 +56,28 @@ export const isAuthenticated = () => {
 export const getCurrentUser = () => {
   const token = getToken();
   if (!isAuthenticated()) return null;
-
   try {
     return jwtDecode(token); // Decode token to get user details
   } catch (error) {
     localStorage.removeItem("token");
     console.error("Invalid token:", error);
+    return null;
+  }
+};
+// Get Current User Details
+export const getCurrentUserDetails = async () => {
+  const token = getToken();
+  if (!isAuthenticated()) return null;
+  try {
+    const config = {
+      headers: { Authorization: `Bearer ${token}` },
+    };
+    const response = await axios.get(`${API_URL}/user/get_user_details`, {
+      ...config,
+    });
+    return response.data.user_details;
+  } catch (error) {
+    console.error("Error fetching user data from server:", error);
     return null;
   }
 };

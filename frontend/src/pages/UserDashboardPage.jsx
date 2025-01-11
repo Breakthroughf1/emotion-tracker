@@ -280,7 +280,11 @@ const UserDashboardPage = () => {
               </button>
               <button
                 className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg"
-                onClick={() => setConfirmEmotion(false)}
+                onClick={() => {
+                  setConfirmEmotion(false);
+                  stopRecording();
+                  setError("");
+                }}
               >
                 Cancel
               </button>
