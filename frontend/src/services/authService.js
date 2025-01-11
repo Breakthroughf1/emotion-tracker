@@ -52,7 +52,7 @@ export const isAuthenticated = () => {
   }
 };
 
-// Get Current User Details
+// Get Current User
 export const getCurrentUser = () => {
   const token = getToken();
   if (!isAuthenticated()) return null;
