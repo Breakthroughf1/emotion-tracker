@@ -12,27 +12,7 @@ export const getEmotion = async () => {
   return response.data;
 };
 // Fetch emotion stats
-export const getEmotionStats = async (startDate, endDate) => {
-  const token = localStorage.getItem("token");
-  const config = {
-    headers: { Authorization: `Bearer ${token}` },
-  };
-  const response = await axios.get(`${API_URL}/get_emotion_stats`, {
-    ...config,
-    params: { start_date: startDate, end_date: endDate },
-  });
-  return response.data;
-};
-
-// Fetch emotion trends (time-based)
-export const getEmotionTrends = async (userId) => {
-  const token = localStorage.getItem("token");
-  const config = {
-    headers: { Authorization: `Bearer ${token}` },
-  };
-  const response = await axios.get(`${API_URL}/get_emotion_trends`, {
-    ...config,
-    params: { user_id: userId },
-  });
+export const getEmotionStats = async () => {
+  const response = await axios.get(`${API_URL}/get_emotion_stats`, {});
   return response.data;
 };

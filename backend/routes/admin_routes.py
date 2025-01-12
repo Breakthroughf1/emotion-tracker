@@ -56,97 +56,50 @@ async def get_emotion(authorization: str = Header(...)):
         raise HTTPException(status_code=500, detail=f"Failed to fetch emotion data: {str(e)}")
 
 
-# @admin_router.get("/get_emotion_stats")
-# async def get_emotion_stats(
-#         user_id: str = Query(None, description="The ID of the user to fetch aggregated emotion data for")):
-#     """
-#     API to get aggregated emotion statistics from the database.
-#     This includes total emotions, most common emotions, and mood analysis.
-#     """
-#     query = """
-#         SELECT emotion, COUNT(*) AS count
-#         FROM emotions
-#         GROUP BY emotion
-#         ORDER BY count DESC
-#     """
-#     if user_id:
-#         query = """
-#             SELECT emotion, COUNT(*) AS count
-#             FROM emotions
-#             WHERE user_id = :user_id
-#             GROUP BY emotion
-#             ORDER BY count DESC
-#         """
-#         params = {"user_id": user_id}
-#     else:
-#         params = {}
-#
-#     try:
-#         rows = await database.fetch_all(query, params)
-#
-#         # Adding sentiment analysis if applicable
-#         emotions = {row['emotion']: row['count'] for row in rows}
-#
-#         # Calculate most frequent emotion (for example: dominant emotion)
-#         dominant_emotion = max(emotions, key=emotions.get, default=None)
-#
-#         # Calculate mood balance (positive vs negative emotions, if applicable)
-#         positive_emotions = ['happy', 'joyful', 'excited']  # Example positive emotions
-#         negative_emotions = ['sad', 'angry', 'anxious']  # Example negative emotions
-#
-#         positive_count = sum(emotions.get(emotion, 0) for emotion in positive_emotions)
-#         negative_count = sum(emotions.get(emotion, 0) for emotion in negative_emotions)
-#
-#         mood_balance = "Neutral"
-#         if positive_count > negative_count:
-#             mood_balance = "Positive"
-#         elif negative_count > positive_count:
-#             mood_balance = "Negative"
-#
-#         return {
-#             "emotion_stats": rows,
-#             "dominant_emotion": dominant_emotion,
-#             "mood_balance": mood_balance,
-#             "positive_count": positive_count,
-#             "negative_count": negative_count
-#         }
-#     except SQLAlchemyError as e:
-#         raise HTTPException(status_code=500, detail="Database error occurred") from e
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Failed to fetch emotion stats: {str(e)}")
+@admin_router.get("/get_emotion_stats")
+async def get_emotion_stats():
+    """
+    API to get aggregated emotion statistics from the database.
+    This includes total emotions, most common emotions, and mood analysis.
+    """
+    query = """
+        SELECT emotion, COUNT(*) AS count
+        FROM emotions
+        GROUP BY emotion
+        ORDER BY count DESC
+    """
+    params = {}
 
-# @admin_router.get("/get_emotion_trends")
-# async def get_emotion_trends(user_id: str = Query(..., description="The ID of the user to fetch emotion trends for")):
-#     """
-#     API to get emotional trends (time-based) for a specific user.
-#     This includes emotion counts over time (e.g., daily or weekly).
-#     """
-#     query = """
-#         SELECT emotion, DATE(timestamp) AS date, COUNT(*) AS count
-#         FROM emotions
-#         WHERE user_id = :user_id
-#         GROUP BY emotion, date
-#         ORDER BY date ASC
-#     """
-#     try:
-#         rows = await database.fetch_all(query, {"user_id": user_id})
-#
-#         # Process the results to return useful data
-#         trend_data = {}
-#         for row in rows:
-#             date = row['date']
-#             emotion = row['emotion']
-#             count = row['count']
-#
-#             if date not in trend_data:
-#                 trend_data[date] = {}
-#
-#             trend_data[date][emotion] = count
-#
-#         return {
-#             "emotion_trends": trend_data
-#         }
-#     except SQLAlchemyError as e:
-#         raise HTTPException(status_code=500, detail="Database error occurred") from e
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Failed to fetch emotion trends: {str(e)}")
+    try:
+        rows = await database.fetch_all(query, params)
+
+        # Adding sentiment analysis if applicable
+        emotions = {row['emotion']: row['count'] for row in rows}
+
+        # Calculate most frequent emotion (for example: dominant emotion)
+        dominant_emotion = max(emotions, key=emotions.get, default=None)
+
+        # Calculate mood balance (positive vs negative emotions, if applicable)
+        positive_emotions = ['happy', 'joyful', 'excited']  # Example positive emotions
+        negative_emotions = ['sad', 'angry', 'anxious']  # Example negative emotions
+
+        positive_count = sum(emotions.get(emotion, 0) for emotion in positive_emotions)
+        negative_count = sum(emotions.get(emotion, 0) for emotion in negative_emotions)
+
+        mood_balance = "Neutral"
+        if positive_count > negative_count:
+            mood_balance = "Positive"
+        elif negative_count > positive_count:
+            mood_balance = "Negative"
+
+        return {
+            "emotion_stats": rows,
+            "dominant_emotion": dominant_emotion,
+            "mood_balance": mood_balance,
+            "positive_count": positive_count,
+            "negative_count": negative_count
+        }
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail="Database error occurred") from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch emotion stats: {str(e)}")

@@ -1,43 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  Title,
-  Tooltip,
-  Legend,
-  LineElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-} from "chart.js";
+import { Pie } from "react-chartjs-2";
+import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement } from "chart.js";
 import { getEmotionStats } from "../../services/adminService";
 
 // Registering necessary Chart.js components
-ChartJS.register(
-  Title,
-  Tooltip,
-  Legend,
-  LineElement,
-  CategoryScale,
-  LinearScale,
-  PointElement
-);
+ChartJS.register(Title, Tooltip, Legend, ArcElement);
 
 const AnalyticsPage = () => {
   const [emotionStats, setEmotionStats] = useState(null);
-  const [emotionTrends, setEmotionTrends] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch emotion stats and trends
-        const stats = await getEmotionStats();
-        // const trends = await getEmotionTrends("user_id_here"); // Replace with actual user ID or filter as needed
-
-        // Set state with fetched data
+        const stats = await getEmotionStats(); // Fetch emotion stats
         setEmotionStats(stats);
-        // setEmotionTrends(trends);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -48,87 +25,104 @@ const AnalyticsPage = () => {
     fetchData();
   }, []);
 
-  // Prepare chart data based on fetched stats
-  const chartData = {
-    labels: emotionTrends ? Object.keys(emotionTrends.emotion_trends) : [], // Dates as x-axis
+  if (loading) {
+    return (
+      <div className="text-center text-gray-900 dark:text-white">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!emotionStats) {
+    return (
+      <div className="text-center text-gray-900 dark:text-white">
+        No data available.
+      </div>
+    );
+  }
+
+  const pieData = {
+    labels: emotionStats.emotion_stats.map((stat) => stat.emotion),
     datasets: [
       {
-        label: "Happiness",
-        data: emotionTrends
-          ? emotionTrends.emotion_trends.map((date) => date["happy"] || 0)
-          : [],
-        fill: false,
-        borderColor: "rgb(75, 192, 192)",
-        tension: 0.1,
-      },
-      {
-        label: "Sadness",
-        data: emotionTrends
-          ? emotionTrends.emotion_trends.map((date) => date["sad"] || 0)
-          : [],
-        fill: false,
-        borderColor: "rgb(255, 99, 132)",
-        tension: 0.1,
-      },
-      {
-        label: "Anger",
-        data: emotionTrends
-          ? emotionTrends.emotion_trends.map((date) => date["angry"] || 0)
-          : [],
-        fill: false,
-        borderColor: "rgb(255, 159, 64)",
-        tension: 0.1,
+        data: emotionStats.emotion_stats.map((stat) => stat.count),
+        backgroundColor: [
+          "#6b7280", // Neutral
+          "#10b981", // Happy
+          "#3b82f6", // Surprised
+          "#ef4444", // Angry
+        ],
+        hoverBackgroundColor: [
+          "#9ca3af", // Neutral
+          "#34d399", // Happy
+          "#60a5fa", // Surprised
+          "#f87171", // Angry
+        ],
+        borderWidth: 1,
       },
     ],
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <main className="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
-        Analytics
+    <main className="flex-1 pl-6 pr-6 pt-4 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-6 text-center">
+        Emotional Analytics Dashboard
       </h1>
 
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-          Emotional Analytics Overview
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg max-w-4xl mx-auto">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+          Overview
         </h2>
-        <p className="text-gray-700 dark:text-gray-300 mb-4">
-          This page provides an overview of the emotional data collected from
-          users. The following charts display trends and statistics on emotions
-          like happiness, sadness, and anger over time.
+        <p className="text-gray-700 dark:text-gray-300 text-center mb-6">
+          Visualize and understand emotional data collected from users.
         </p>
 
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-          Emotion Trends Over Time
-        </h3>
-        <div className="w-full h-96 mb-6">
-          <Line data={chartData} />
+        <div className="mb-10">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">
+            Emotion Distribution
+          </h3>
+          <div className="w-72 h-72 mx-auto">
+            <Pie data={pieData} />
+          </div>
         </div>
 
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-          Emotions by User (Admin View)
-        </h3>
-        <p className="text-gray-700 dark:text-gray-300 mb-4">
-          Admin users can review detailed emotion data across all registered
-          users. This data can help in identifying emotional patterns and
-          generating personalized reports for users.
-        </p>
-
-        <div>
-          <h4 className="text-md font-bold text-gray-900 dark:text-white mb-2">
-            Dominant Emotion: {emotionStats.dominant_emotion}
-          </h4>
-          <p className="text-gray-700 dark:text-gray-300">
-            Positive Mood: {emotionStats.positive_count}, Negative Mood:{" "}
-            {emotionStats.negative_count}
-          </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg text-center">
+            <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+              Dominant Emotion
+            </h4>
+            <p className="text-xl font-semibold text-indigo-600 dark:text-indigo-400">
+              {emotionStats.dominant_emotion}
+            </p>
+          </div>
+          <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg text-center">
+            <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+              Mood Balance
+            </h4>
+            <p className="text-xl font-semibold text-green-600 dark:text-green-400">
+              {emotionStats.mood_balance}
+            </p>
+          </div>
         </div>
 
-        {/* Additional charts or stats can go here */}
+        <div className="grid grid-cols-2 gap-6 mt-6">
+          <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg text-center">
+            <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+              Positive Emotions
+            </h4>
+            <p className="text-xl font-semibold text-green-500 dark:text-green-300">
+              {emotionStats.positive_count}
+            </p>
+          </div>
+          <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg text-center">
+            <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+              Negative Emotions
+            </h4>
+            <p className="text-xl font-semibold text-red-500 dark:text-red-300">
+              {emotionStats.negative_count}
+            </p>
+          </div>
+        </div>
       </div>
     </main>
   );
