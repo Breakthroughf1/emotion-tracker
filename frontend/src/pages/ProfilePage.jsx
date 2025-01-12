@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Modal from "react-modal";
 import { FaCamera } from "react-icons/fa";
 import {
@@ -6,7 +7,7 @@ import {
   deleteAccount,
   fetchEmotionAnalytics,
 } from "../services/userService";
-import { getCurrentUserDetails } from "../services/authService";
+import { getCurrentUserDetails, logoutUser } from "../services/authService";
 import {
   Chart as ChartJS,
   BarElement,
@@ -45,6 +46,7 @@ const modalStyles = {
 };
 
 const ProfilePage = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState({});
   const [emotionData, setEmotionData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -108,8 +110,10 @@ const ProfilePage = () => {
   const handleDeleteAccount = async () => {
     if (window.confirm("Are you sure you want to delete your account?")) {
       try {
-        await deleteAccount(user.id);
-        alert("Account deleted successfully!");
+        const msg = await deleteAccount(user.email);
+        alert(msg);
+        logoutUser();
+        navigate("/login");
         // Redirect user or take other necessary actions here
       } catch (error) {
         console.error("Error deleting account:", error);

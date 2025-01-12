@@ -2,6 +2,7 @@ import os
 from typing import Optional
 
 from fastapi import APIRouter, Form, HTTPException, Query, Header, UploadFile, File
+from pydantic import EmailStr
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.responses import JSONResponse, FileResponse
 
@@ -205,3 +206,27 @@ async def update_profile(
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
+
+@user_router.delete("/delete")
+async def delete_account(email: EmailStr):
+    """
+    Deletes a user account based on the provided email.
+
+    Args:
+        email (str): The email address of the user to be deleted.
+
+    Returns:
+        dict: A message confirming the deletion or an error message.
+    """
+    # Check if the user exists
+    query = "SELECT * FROM users WHERE email = :email"
+    user = await database.fetch_one(query=query, values={"email": email})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Delete the user
+    delete_query = "DELETE FROM users WHERE email = :email"
+    await database.execute(query=delete_query, values={"email": email})
+
+    return {"message": f"Account associated with {email} has been deleted successfully."}

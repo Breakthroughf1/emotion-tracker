@@ -38,7 +38,16 @@ export const updateProfile = async (formData) => {
     );
   }
 };
-export const deleteAccount = async (user_id) => {
-  const response = await axios.get(`${API_URL}/get_emotion?user_id=${user_id}`);
-  return response.data;
+export const deleteAccount = async (email) => {
+  try {
+    // Ensure the email is URL-encoded
+    const response = await axios.delete(`${API_URL}/delete`, {
+      params: { email: email },
+    });
+    return response.data.message;
+  } catch (error) {
+    // Handle errors appropriately
+    console.error("Error deleting account:", error.message);
+    throw new Error("Failed to delete account. Please try again.");
+  }
 };
