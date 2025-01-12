@@ -130,18 +130,42 @@ const HelpPage = () => {
           About the Developers
         </h3>
         <p className="text-gray-700 dark:text-gray-300 mb-4">
-          <strong>EmotionTracker</strong> is developed by the team at{" "}
-          <strong>Breakthrough</strong>. Breakthrough is an innovative
-          organization focused on creating advanced applications with
-          cutting-edge AI technologies. Our mission is to develop intelligent
-          solutions that improve human experiences and contribute to global
-          challenges.
+          {" "}
+          <a
+            href="https://breakthrough.ind.in/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-blue-400 cursor-pointer"
+          >
+            <strong>Breakthrough</strong>
+          </a>{" "}
+          is developed by the team at{" "}
+          <a
+            href="https://breakthrough.ind.in/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-blue-400 cursor-pointer"
+          >
+            <strong>Breakthrough</strong>
+          </a>{" "}
+          . Breakthrough is an innovative organization focused on creating
+          advanced applications with cutting-edge AI technologies. Our mission
+          is to develop intelligent solutions that improve human experiences and
+          contribute to global challenges.
         </p>
 
         <p className="text-gray-700 dark:text-gray-300 mb-4">
           For more information or to get in touch with the team, please visit
-          the official <strong>Breakthrough</strong> website or connect with us
-          on LinkedIn.
+          the official{" "}
+          <a
+            href="https://breakthrough.ind.in/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-blue-400 cursor-pointer"
+          >
+            <strong>Breakthrough</strong>
+          </a>{" "}
+          website or connect with us on LinkedIn.
         </p>
 
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
@@ -161,7 +185,7 @@ const HelpPage = () => {
             href="https://www.linkedin.com/company/breakthrough-pvt-ltd"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-600 dark:text-blue-400"
+            className="text-blue-600 dark:text-blue-400 cursor-pointer"
           >
             LinkedIn page
           </a>
