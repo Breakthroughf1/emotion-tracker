@@ -10,6 +10,7 @@ import {
   LinearScale,
   PointElement,
 } from "chart.js";
+import { getEmotionStats } from "../../services/adminService";
 
 // Registering necessary Chart.js components
 ChartJS.register(
@@ -23,41 +24,67 @@ ChartJS.register(
 );
 
 const AnalyticsPage = () => {
-  // Dummy data for emotional analysis (you can replace this with API data)
-  const [data, setData] = useState({
-    labels: ["January", "February", "March", "April", "May", "June"], // Months
+  const [emotionStats, setEmotionStats] = useState(null);
+  const [emotionTrends, setEmotionTrends] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch emotion stats and trends
+        const stats = await getEmotionStats();
+        // const trends = await getEmotionTrends("user_id_here"); // Replace with actual user ID or filter as needed
+
+        // Set state with fetched data
+        setEmotionStats(stats);
+        // setEmotionTrends(trends);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Prepare chart data based on fetched stats
+  const chartData = {
+    labels: emotionTrends ? Object.keys(emotionTrends.emotion_trends) : [], // Dates as x-axis
     datasets: [
       {
         label: "Happiness",
-        data: [5, 7, 9, 3, 6, 8],
+        data: emotionTrends
+          ? emotionTrends.emotion_trends.map((date) => date["happy"] || 0)
+          : [],
         fill: false,
         borderColor: "rgb(75, 192, 192)",
         tension: 0.1,
       },
       {
         label: "Sadness",
-        data: [3, 2, 1, 4, 2, 3],
+        data: emotionTrends
+          ? emotionTrends.emotion_trends.map((date) => date["sad"] || 0)
+          : [],
         fill: false,
         borderColor: "rgb(255, 99, 132)",
         tension: 0.1,
       },
       {
         label: "Anger",
-        data: [2, 3, 4, 5, 3, 4],
+        data: emotionTrends
+          ? emotionTrends.emotion_trends.map((date) => date["angry"] || 0)
+          : [],
         fill: false,
         borderColor: "rgb(255, 159, 64)",
         tension: 0.1,
       },
     ],
-  });
+  };
 
-  useEffect(() => {
-    // Fetch data from API or database here for real emotion data
-    // Example:
-    // fetch('/api/emotion-stats')
-    //   .then(response => response.json())
-    //   .then(data => setData(data));
-  }, []);
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <main className="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
@@ -79,7 +106,7 @@ const AnalyticsPage = () => {
           Emotion Trends Over Time
         </h3>
         <div className="w-full h-96 mb-6">
-          <Line data={data} />
+          <Line data={chartData} />
         </div>
 
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
@@ -91,7 +118,17 @@ const AnalyticsPage = () => {
           generating personalized reports for users.
         </p>
 
-        {/* Additional Charts/Reports can go here */}
+        <div>
+          <h4 className="text-md font-bold text-gray-900 dark:text-white mb-2">
+            Dominant Emotion: {emotionStats.dominant_emotion}
+          </h4>
+          <p className="text-gray-700 dark:text-gray-300">
+            Positive Mood: {emotionStats.positive_count}, Negative Mood:{" "}
+            {emotionStats.negative_count}
+          </p>
+        </div>
+
+        {/* Additional charts or stats can go here */}
       </div>
     </main>
   );

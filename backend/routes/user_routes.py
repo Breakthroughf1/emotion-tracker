@@ -1,11 +1,12 @@
 import os
+from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, Header, UploadFile, File
+from fastapi import APIRouter, Form, HTTPException, Query, Header, UploadFile, File
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.responses import JSONResponse, FileResponse
 
 from config import database
-from schemas.user_schemas import EmotionRequest
+from schemas.user_schemas import EmotionRequest, UpdateProfileResponse
 
 from utils.jwt_handler import decode_jwt
 
@@ -130,7 +131,6 @@ async def get_user_details(authorization: str = Header(..., description="Authori
         file_path = user["face_data_path"]
         public_url = f"http://127.0.0.1:8000/static/{file_path}"
         user["face_data_path"] = public_url
-        print(user)
         return {"user_details": user}
 
     except SQLAlchemyError as e:
@@ -138,48 +138,70 @@ async def get_user_details(authorization: str = Header(..., description="Authori
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch user details: {str(e)}")
 
-
-@user_router.post("/update_profile_pic")
-async def update_profile_pic(
-        authorization: str = Header(..., description="Authorization token"),
-        file: UploadFile = File(...),
+@user_router.post("/update_profile", response_model=UpdateProfileResponse)
+async def update_profile(
+    name: str = Form(...),
+    email: str = Form(...),
+    profilePic: Optional[UploadFile] = File(None),
+    authorization: str = Header(..., description="Authorization token")
 ):
     """
-    API to upload and update the user's profile picture.
+    API to update user profile details (name, email, profile picture).
+    :return: Updated user details
     """
+
+    # Check if the authorization header contains Bearer token
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid authorization header")
 
-    # Extract token from header
+    # Extract token from the authorization header
     token = authorization.split(" ")[1]
 
-    # Decode token to get email
-    user = decode_jwt(token)
-    email = user.get("sub")
-    if not email:
+    # Decode JWT token to extract user information (e.g., email)
+    user_data = decode_jwt(token)
+    if not user_data:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    face_dir = "face_data/"
-    os.makedirs(face_dir, exist_ok=True)
-    file_name = email.split('@')[0]  # Adjust to handle email properly
-
-    face_path = os.path.join(face_dir, f"{file_name}.png")
-
     try:
-        # Decode and save the base64 image
-        with open(face_path, "wb") as image_file:
-            image_file.write(await file.read())
-
-        # Update user with face data path
-        update_query = """
-            UPDATE users SET face_data_path = :face_path WHERE email = :email
-        """
-        await database.execute(update_query, {"face_path": face_path, "email": email})
+        # Update name and email in the database if provided
+        if name or email:
+            update_query = """
+                UPDATE users
+                SET name = COALESCE(:name, name),
+                    email = COALESCE(:email, email)
+                WHERE id = :user_id
+            """
+            try:
+                await database.execute(update_query, {"name": name, "email": email, "user_id": user_data["id"]})
+            except Exception as e:
+                print(f"Database update failed: {e}")
+                raise HTTPException(status_code=500, detail="Database update failed")
+        if profilePic:
+            face_dir = "face_data/"
+            os.makedirs(face_dir, exist_ok=True)
+            file_name = email.split('@')[0]  # Use email as part of filename
+    
+            face_path = os.path.join(face_dir, f"{file_name}.png")
+    
+            # Decode and save the base64 image
+            with open(face_path, "wb") as image_file:
+                image_file.write(await profilePic.read())
+    
+            # Update the face data path in the database
+            update_query_face = """
+                UPDATE users
+                SET face_data_path = :face_path
+                WHERE email = :email
+            """
+            await database.execute(update_query_face, {"face_path": face_path, "email": email})
 
         return JSONResponse(
             status_code=200,
-            content={"message": "Profile picture updated successfully."},
+            content={
+                "message": "Profile updated successfully"
+            },
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to update profile picture: {str(e)}")
+        print(e)
+        raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
