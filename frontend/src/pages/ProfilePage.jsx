@@ -242,6 +242,18 @@ const ProfilePage = () => {
                   <strong>Dominant Emotion:</strong>{" "}
                   {emotionData.dominantEmotion || "N/A"}
                 </p>
+                <p className="text-gray-700 dark:text-gray-300">
+                  <strong>Mood Balance:</strong>{" "}
+                  {emotionData.moodBalance || "N/A"}
+                </p>
+                <p className="text-gray-700 dark:text-gray-300">
+                  <strong>Positive Emotion Count:</strong>{" "}
+                  {emotionData.positiveCount || 0}
+                </p>
+                <p className="text-gray-700 dark:text-gray-300">
+                  <strong>Negative Emotion Count:</strong>{" "}
+                  {emotionData.negativeCount || 0}
+                </p>
                 <div className="h-80">
                   <Bar
                     data={{
