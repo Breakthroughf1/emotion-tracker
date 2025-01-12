@@ -14,11 +14,6 @@ class RegisterRequest(BaseModel):
     isAdmin: Optional[bool] = False
 
 
-class UpdateUserRequest(BaseModel):
-    name: Optional[str] = None
-    email: Optional[EmailStr] = None
-
-
 class FaceDataRequest(BaseModel):
     email: EmailStr
     face_data: str
