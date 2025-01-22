@@ -31,7 +31,7 @@ const Navbar = ({ isAdmin }) => {
           to="/"
           className="text-xl font-bold text-gray-900 dark:text-white"
         >
-          EmotionTracker
+          Emotion Detector
         </Link>
         <div className="flex space-x-4">
           <Link
