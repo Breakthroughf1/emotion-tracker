@@ -25,8 +25,23 @@ const LoginPage = () => {
   };
 
   return (
-    <section className="bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center">
-      <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md dark:bg-gray-800 dark:border-gray-700">
+<section
+      className="min-h-screen flex items-center justify-center relative"
+      style={{
+        backgroundImage: `url('ai-generated-8612487_1280.jpg')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
+      {/* Overlay for dark shade */}
+      <div
+        className="absolute inset-0 bg-black opacity-50"
+        style={{
+          zIndex: 0, // Place the overlay below the content
+        }}
+      ></div>
+      <div className="w-full max-w-md p-6 rounded-lg shadow-md bg-gray-800 opacity-85 dark:border-gray-700">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white text-center">
           Welcome Back
         </h2>
