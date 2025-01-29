@@ -230,3 +230,17 @@ async def delete_account(email: EmailStr):
     await database.execute(query=delete_query, values={"email": email})
 
     return {"message": f"Account associated with {email} has been deleted successfully."}
+
+# TODO implement Remove record API
+@user_router.delete("/remove")
+async def delete_record(email: EmailStr, id):
+    """
+    Deletes a user record based on the provided email.
+
+    Args:
+        email (str): The email address of the user to be deleted.
+
+    Returns:
+        dict: A message confirming the deletion or an error message.
+    """
+    return {"message": f"Account associated with {email} has been deleted successfully."}
