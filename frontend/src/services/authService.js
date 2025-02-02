@@ -3,6 +3,10 @@ import { jwtDecode } from "jwt-decode";
 
 const API_URL = "http://127.0.0.1:8000";
 
+// Modified storage handling
+export const getToken = () => {
+  return localStorage.getItem("token") || sessionStorage.getItem("token");
+};
 // Register User
 export const registerUser = async (userData) => {
   const response = await axios.post(`${API_URL}/auth/register`, userData);
@@ -16,12 +20,9 @@ export const registerFaceData = async (userFaceData) => {
   );
   return response.data;
 };
-
-// Login User
 export const loginUser = async (credentials) => {
   const response = await axios.post(`${API_URL}/auth/login`, credentials);
-  localStorage.setItem("token", response.data.token); // Save token to local storage
-  return response.data;
+  return response.data; // Return token without storing it
 };
 
 // Request Password Reset (stubbed function)
@@ -29,25 +30,24 @@ export const requestPasswordReset = () => {
   return null;
 };
 
-// Logout User
 export const logoutUser = () => {
+  // Clear all possible token storage
   localStorage.removeItem("token");
+  sessionStorage.removeItem("token");
 };
 
-// Get Token from Local Storage
-export const getToken = () => localStorage.getItem("token");
-
-// Check if the User is Authenticated
+// Enhanced authentication check
 export const isAuthenticated = () => {
   const token = getToken();
   if (!token) return false;
 
   try {
     const decodedToken = jwtDecode(token);
-    return decodedToken.exp * 1000 > Date.now(); // Token is valid if not expired
+    const isValid = decodedToken.exp * 1000 > Date.now();
+    if (!isValid) logoutUser();
+    return isValid;
   } catch (error) {
-    localStorage.removeItem("token");
-    console.error("Invalid token:", error);
+    logoutUser();
     return false;
   }
 };
@@ -64,20 +64,24 @@ export const getCurrentUser = () => {
     return null;
   }
 };
-// Get Current User Details
+
+// Role-based helper functions
+export const userHasRole = (requiredRoles) => {
+  const user = getCurrentUser();
+  return user && requiredRoles.includes(user.role);
+};
+
+// Async user details fetch
 export const getCurrentUserDetails = async () => {
-  const token = getToken();
-  if (!isAuthenticated()) return null;
   try {
-    const config = {
-      headers: { Authorization: `Bearer ${token}` },
-    };
+    const token = getToken();
     const response = await axios.get(`${API_URL}/user/get_user_details`, {
-      ...config,
+      headers: { Authorization: `Bearer ${token}` },
     });
     return response.data.user_details;
   } catch (error) {
-    console.error("Error fetching user data from server:", error);
+    console.error("Error fetching user details:", error);
+    logoutUser();
     return null;
   }
 };
