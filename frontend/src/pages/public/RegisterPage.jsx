@@ -127,9 +127,16 @@ const RegistrationPage = () => {
   };
 
   return (
-    <section className="bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center">
+    <section
+      className="min-h-screen flex items-center justify-center relative"
+      style={{
+        backgroundImage: `url('ai-generated-8612487_1280.jpg')`,
+        backgroundSize: "cover",
+      }}
+    >
+      <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
       <div
-        className={`w-full max-w-md p-6 bg-white rounded-lg shadow-md dark:bg-gray-800 dark:border-gray-700 transform transition-all duration-1000 ${
+        className={`w-full max-w-md p-6 rounded-lg shadow-md bg-gray-800 opacity-85 dark:border-gray-700 relative z-10 transform transition-all duration-1000 ${
           isFlipped ? "rotate-y-180" : ""
         }`}
       >
