@@ -1,25 +1,34 @@
 // components/Routes/PrivateRoute.js
-import React from "react";
-import { Navigate, Outlet } from "react-router-dom";
-import { getCurrentUser } from "../../services/authService";
+import React, { useState, useEffect } from "react";
+import { Navigate, useLocation, Outlet } from "react-router-dom";
+import { isAuthenticated, getCurrentUser } from "../../services/authService";
+import LoadingSpinner from "../LoadingSpinner";
 
 const PrivateRoute = ({ allowedRoles }) => {
-  const currentUser = getCurrentUser(); // Get the current user
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const location = useLocation();
 
-  if (!currentUser) {
-    // Redirect to login if not authenticated
-    return <Navigate to="/login" replace />;
-  }
+  useEffect(() => {
+    const verifyAuth = async () => {
+      try {
+        const authenticated = isAuthenticated();
+        const userDetails = getCurrentUser();
+        const userRole = userDetails?.role ? "admin" : "user";
+        const authorized = authenticated && allowedRoles.includes(userRole);
+        setIsAuthorized(authorized);
+      } catch (error) {
+        setIsAuthorized(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const userRole = currentUser.role; // Boolean: true (admin), false (user)
+    verifyAuth();
+  }, [location, allowedRoles]);
+  console.log(isAuthorized);
+  if (isLoading) return <LoadingSpinner />;
 
-  if (!allowedRoles.includes(userRole)) {
-    // Redirect unauthorized users based on their role
-    return <Navigate to="/user-dashboard" replace />;
-  }
-
-  // Render nested routes if authenticated and authorized
-  return <Outlet />;
+  return isAuthorized ? <Outlet /> : <Navigate to="/login" replace />;
 };
-
 export default PrivateRoute;

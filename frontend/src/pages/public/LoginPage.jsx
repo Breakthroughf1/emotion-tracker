@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { loginUser, getCurrentUserDetails } from "../../services/authService";
+import { loginUser, getCurrentUser } from "../../services/authService";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -26,7 +26,7 @@ const LoginPage = () => {
       storage.setItem("token", token);
 
       // Fetch fresh user data
-      const userDetails = await getCurrentUserDetails();
+      const userDetails = getCurrentUser();
 
       // Redirect based on role
       const redirectPath = userDetails?.is_admin
