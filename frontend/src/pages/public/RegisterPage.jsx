@@ -88,7 +88,7 @@ const RegistrationPage = () => {
       setSuccess("Face enrolled successfully!");
       localStorage.setItem("token", data.token);
       stopCamera();
-      navigate("/");
+      navigate("/user-dashboard");
     } catch (err) {
       console.error("Error enrolling face:", err);
       setError("Failed to enroll the face. Please try again.");

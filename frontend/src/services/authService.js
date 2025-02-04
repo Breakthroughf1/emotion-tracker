@@ -59,7 +59,7 @@ export const getCurrentUser = () => {
   try {
     return jwtDecode(token); // Decode token to get user details
   } catch (error) {
-    localStorage.removeItem("token");
+    logoutUser();
     console.error("Invalid token:", error);
     return null;
   }
@@ -71,7 +71,7 @@ export const userHasRole = (requiredRoles) => {
   return user && requiredRoles.includes(user.role);
 };
 
-// Async user details fetch
+// // Async user details fetch
 export const getCurrentUserDetails = async () => {
   try {
     const token = getToken();
