@@ -26,7 +26,6 @@ const PrivateRoute = ({ allowedRoles }) => {
 
     verifyAuth();
   }, [location, allowedRoles]);
-  console.log(isAuthorized);
   if (isLoading) return <LoadingSpinner />;
 
   return isAuthorized ? <Outlet /> : <Navigate to="/login" replace />;

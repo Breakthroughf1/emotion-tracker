@@ -34,7 +34,10 @@ const LoginPage = () => {
         : "/user-dashboard";
       navigate(redirectPath);
     } catch (err) {
-      setError(err.response?.data?.message || "Authentication failed");
+      console.error("Login error:", err);
+      setError(
+        err.response?.data?.message || err.message || "Authentication failed"
+      );
     } finally {
       setLoading(false);
     }
@@ -75,6 +78,7 @@ const LoginPage = () => {
             <input
               type="email"
               id="email"
+              disabled={loading}
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -97,6 +101,7 @@ const LoginPage = () => {
               type={showPassword ? "text" : "password"}
               id="password"
               value={password}
+              disabled={loading}
               onChange={(e) => {
                 setPassword(e.target.value);
                 setError("");
@@ -109,6 +114,7 @@ const LoginPage = () => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
               className="absolute right-3 top-9 text-sm text-gray-400 hover:text-gray-300"
             >
               {showPassword ? (
