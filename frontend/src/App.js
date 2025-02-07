@@ -27,7 +27,7 @@ const App = () => {
   useEffect(() => {
     const checkAuth = async () => {
       if (isAuthenticated()) {
-        const details = getCurrentUser();
+        const details = await getCurrentUser();
         setUserRole(details?.role ? "admin" : "user");
       }
       setAuthChecked(true);
@@ -39,8 +39,6 @@ const App = () => {
   if (!authChecked) {
     return <LoadingSpinner />; // Show a loading spinner while checking auth
   }
-
-  console.log(userRole);
 
   return (
     <Router>

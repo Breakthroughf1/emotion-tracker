@@ -53,7 +53,7 @@ export const isAuthenticated = () => {
 };
 
 // Get Current User
-export const getCurrentUser = () => {
+export const getCurrentUser = async () => {
   const token = getToken();
   if (!isAuthenticated()) return null;
   try {
