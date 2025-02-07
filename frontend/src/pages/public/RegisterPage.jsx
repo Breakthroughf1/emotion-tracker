@@ -1,20 +1,40 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser, registerFaceData } from "../../services/authService";
+import * as faceapi from "face-api.js";
 
 const RegistrationPage = () => {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
+  const [faceDetected, setFaceDetected] = useState(false);
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const faceCanvasRef = useRef(null);
+  const detectionIntervalRef = useRef(null);
+
+  useEffect(() => {
+    loadModels();
+  }, []);
+
+  const loadModels = async () => {
+    try {
+      await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
+      await faceapi.nets.ssdMobilenetv1.loadFromUri("/models");
+    } catch (error) {
+      console.error("Face API models failed to load:", error);
+      setError("Failed to load face detection models.");
+    }
+  };
 
   const startCamera = async () => {
     try {
@@ -25,6 +45,11 @@ const RegistrationPage = () => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setCameraStream(stream);
+
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current.play(); // Ensure the video starts playing
+          detectFace();
+        };
       }
     } catch (err) {
       console.error("Camera access failed", err);
@@ -37,34 +62,76 @@ const RegistrationPage = () => {
       cameraStream.getTracks().forEach((track) => track.stop());
       setCameraStream(null);
     }
+
+    if (detectionIntervalRef.current) {
+      clearInterval(detectionIntervalRef.current);
+      detectionIntervalRef.current = null;
+    }
   };
 
-  useEffect(() => {
-    if (isFlipped) {
-      startCamera();
-    } else {
-      stopCamera();
+  const detectFace = async () => {
+    if (!videoRef.current || !faceCanvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = faceCanvasRef.current;
+
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      console.warn("Video dimensions are not yet available.");
+      setTimeout(detectFace, 500); // Retry after a short delay
+      return;
     }
-    // Clean up when component unmounts
-    return stopCamera;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFlipped]);
+
+    const displaySize = { width: video.videoWidth, height: video.videoHeight };
+    faceapi.matchDimensions(canvas, displaySize);
+
+    const detect = async () => {
+      if (!video.paused && !video.ended) {
+        const detections = await faceapi.detectAllFaces(
+          video,
+          new faceapi.TinyFaceDetectorOptions()
+        );
+
+        setFaceDetected(detections.length > 0);
+
+        if (detections.length > 0) {
+          const resizedDetections = faceapi.resizeResults(
+            detections,
+            displaySize
+          );
+
+          const canvasCtx = canvas.getContext("2d");
+          if (canvasCtx) {
+            canvasCtx.clearRect(0, 0, displaySize.width, displaySize.height);
+            faceapi.draw.drawDetections(canvas, resizedDetections);
+          }
+        }
+      }
+      requestAnimationFrame(detect);
+    };
+
+    requestAnimationFrame(detect);
+  };
 
   const captureFaceImage = async () => {
-    const canvas = canvasRef.current;
+    if (!faceDetected) {
+      setError("No face detected. Please ensure your face is visible.");
+      return null;
+    }
+
     const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (!video || !canvas) {
+      setError("Camera not initialized.");
+      return;
+    }
 
     const context = canvas.getContext("2d");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Convert the image to base64
-    let faceData = canvas.toDataURL("image/png");
-
-    // Remove the metadata prefix
-    faceData = faceData.replace(/^data:image\/png;base64,/, "");
-
+    let faceData = canvas.toDataURL("image/png").split(",")[1];
     return faceData;
   };
 
@@ -75,14 +142,16 @@ const RegistrationPage = () => {
 
     try {
       const face_data = await captureFaceImage();
+      if (!face_data) {
+        setLoading(false);
+        return;
+      }
 
-      // Correctly structure the request payload
       const userFaceData = {
         email: email,
         face_data: face_data,
       };
 
-      // Send the payload to the backend
       const data = await registerFaceData(userFaceData);
 
       setSuccess("Face enrolled successfully!");
@@ -91,7 +160,7 @@ const RegistrationPage = () => {
       navigate("/user-dashboard");
     } catch (err) {
       console.error("Error enrolling face:", err);
-      setError("Failed to enroll the face. Please try again.");
+      setError(err.message || "Failed to enroll face. Try again.");
     } finally {
       setLoading(false);
     }
@@ -109,14 +178,12 @@ const RegistrationPage = () => {
     try {
       await registerUser({ name, email, password });
       setSuccess("Registration successful! Redirecting ...");
-      // Trigger the flip animation
       setIsFlipped(true);
-
-      // Clear input fields after a short delay to show the flip animation
       setTimeout(() => {
         setPassword("");
         setConfirmPassword("");
         setSuccess("");
+        startCamera();
       }, 1000);
     } catch (err) {
       console.log(err);
@@ -125,6 +192,17 @@ const RegistrationPage = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isFlipped) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+
+    return stopCamera;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFlipped]);
 
   return (
     <section
@@ -136,7 +214,7 @@ const RegistrationPage = () => {
     >
       <div className="absolute inset-0 bg-black opacity-50 z-0"></div>
       <div
-        className={`w-full max-w-md p-6 rounded-lg shadow-md bg-gray-800 opacity-85 dark:border-gray-700 relative z-10 transform transition-all duration-1000 ${
+        className={`w-full max-w-md p-6 rounded-lg shadow-md bg-gray-800 opacity-85 dark:border-gray-700 relative z-10 transform transition-transform duration-1000 ${
           isFlipped ? "rotate-y-180" : ""
         }`}
       >
@@ -193,39 +271,135 @@ const RegistrationPage = () => {
                   className="w-full p-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
                 />
               </div>
-              <div>
+              <div className="relative">
                 <label
                   htmlFor="password"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  className="block mb-2 text-sm font-medium text-gray-100"
                 >
                   Password
                 </label>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   id="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError("");
+                  }}
                   placeholder="••••••••"
+                  autoComplete="current-password"
                   required
-                  className="w-full p-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                  className="w-full p-2 pr-10 border rounded-lg bg-gray-700 border-gray-600 placeholder-gray-400 text-white"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-9 text-sm text-gray-400 hover:text-gray-300"
+                >
+                  {showPassword ? (
+                    <svg
+                      className="w-6 h-6"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-6 h-6"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
+                      />
+                    </svg>
+                  )}
+                </button>
               </div>
-              <div>
+              <div className="relative">
                 <label
                   htmlFor="confirmPassword"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  className="block mb-2 text-sm font-medium text-gray-100"
                 >
                   Confirm Password
                 </label>
                 <input
-                  type="password"
+                  type={showPasswordConfirm ? "text" : "password"}
                   id="confirmPassword"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={loading}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setError("");
+                  }}
                   placeholder="••••••••"
+                  autoComplete="current-password"
                   required
-                  className="w-full p-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                  className="w-full p-2 pr-10 border rounded-lg bg-gray-700 border-gray-600 placeholder-gray-400 text-white"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-9 text-sm text-gray-400 hover:text-gray-300"
+                >
+                  {showPasswordConfirm ? (
+                    <svg
+                      className="w-6 h-6"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-6 h-6"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
+                      />
+                    </svg>
+                  )}
+                </button>
               </div>
               <button
                 type="submit"
@@ -261,6 +435,7 @@ const RegistrationPage = () => {
                 className="w-full h-full object-cover"
               />
               <canvas ref={canvasRef} style={{ display: "none" }} />
+              <canvas ref={faceCanvasRef} width="300" height="300" />
             </div>
             {error && (
               <div className="mb-4 p-3 text-red-700 bg-red-100 rounded-lg">
