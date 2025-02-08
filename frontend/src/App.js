@@ -27,7 +27,7 @@ const App = () => {
   useEffect(() => {
     const checkAuth = async () => {
       if (isAuthenticated()) {
-        const details = await getCurrentUser();
+        const details = getCurrentUser();
         setUserRole(details?.role ? "admin" : "user");
       }
       setAuthChecked(true);

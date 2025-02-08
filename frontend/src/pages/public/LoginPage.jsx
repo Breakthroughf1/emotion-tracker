@@ -26,7 +26,7 @@ const LoginPage = () => {
       storage.setItem("token", token);
 
       // Fetch fresh user data
-      const userDetails = await getCurrentUser();
+      const userDetails = getCurrentUser();
 
       // Redirect based on role
       const redirectPath = userDetails?.is_admin
