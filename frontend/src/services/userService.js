@@ -12,9 +12,27 @@ export const getEmotion = async (user_id) => {
   const response = await axios.get(`${API_URL}/get_emotion?user_id=${user_id}`);
   return response.data;
 };
-export const getProfile = async (user_id) => {
-  const response = await axios.get(`${API_URL}/get_emotion?user_id=${user_id}`);
-  return response.data;
+export const getProfile = async () => {
+  if (!isAuthenticated()) return null;
+
+  try {
+    const token = getToken();
+    const response = await axios.get(`${API_URL}/get_user_profile`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log(response.data);
+    if (response.data) {
+      return response.data; // Ensure backend sends a valid image URL
+    } else {
+      console.error("Profile image not found in response:", response.data);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching profile image:", error);
+    return null;
+  }
 };
 export const fetchEmotionAnalytics = async (user_id) => {
   const response = await axios.get(
