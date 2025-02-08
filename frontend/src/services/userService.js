@@ -12,6 +12,10 @@ export const getEmotion = async (user_id) => {
   const response = await axios.get(`${API_URL}/get_emotion?user_id=${user_id}`);
   return response.data;
 };
+export const getProfile = async (user_id) => {
+  const response = await axios.get(`${API_URL}/get_emotion?user_id=${user_id}`);
+  return response.data;
+};
 export const fetchEmotionAnalytics = async (user_id) => {
   const response = await axios.get(
     `${API_URL}/get_emotion_stats?user_id=${user_id}`

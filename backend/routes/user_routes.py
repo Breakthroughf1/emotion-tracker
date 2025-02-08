@@ -101,7 +101,37 @@ async def get_emotion_stats(
         raise HTTPException(status_code=500, detail="Database error occurred") from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch emotion stats: {str(e)}")
+    
 
+@user_router.get("/get_user_profile")
+async def get_user_profile(authorization: str = Header(..., description="Authorization token")):
+    """
+    API to get profile picture from the database.
+    """
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authorization header")
+
+        # Extract token from header
+    token = authorization.split(" ")[1]
+
+    # Decode token to get email
+    user = decode_jwt(token)
+
+    # Query to fetch user details by email
+    query = """
+            SELECT face_data_path
+            FROM users
+            WHERE email = :email
+        """
+    try:
+        result = dict(await database.fetch_one(query, {"email": user.get("sub")}))
+        if not result:
+            raise HTTPException(status_code=404, detail="User not found")
+        return f"http://127.0.0.1:8000/static/{result["face_data_path"]}"
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail="Database error occurred") from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch user profile picture: {str(e)}")
 
 @user_router.get("/get_user_details")
 async def get_user_details(authorization: str = Header(..., description="Authorization token")):
