@@ -40,8 +40,6 @@ const App = () => {
     return <LoadingSpinner />; // Show a loading spinner while checking auth
   }
 
-  console.log(userRole);
-
   return (
     <Router>
       <Routes>

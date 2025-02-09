@@ -34,7 +34,12 @@ const LoginPage = () => {
         : "/user-dashboard";
       navigate(redirectPath);
     } catch (err) {
-      setError(err.response?.data?.message || "Authentication failed");
+      console.error("Login error:", err);
+      if (err.response?.status === 401) {
+        setError("Authentication failed incorrect email or password");
+      } else {
+        setError(err.message || "Authentication failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -75,6 +80,7 @@ const LoginPage = () => {
             <input
               type="email"
               id="email"
+              disabled={loading}
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -97,6 +103,7 @@ const LoginPage = () => {
               type={showPassword ? "text" : "password"}
               id="password"
               value={password}
+              disabled={loading}
               onChange={(e) => {
                 setPassword(e.target.value);
                 setError("");
@@ -109,7 +116,9 @@ const LoginPage = () => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
               className="absolute right-3 top-9 text-sm text-gray-400 hover:text-gray-300"
+              tabIndex={0}
             >
               {showPassword ? (
                 <svg
@@ -173,6 +182,7 @@ const LoginPage = () => {
             type="submit"
             className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none disabled:opacity-50"
             disabled={loading}
+            aria-busy={loading}
           >
             {loading ? "Signing In..." : "Sign In"}
           </button>

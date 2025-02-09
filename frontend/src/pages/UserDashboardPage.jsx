@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import * as faceapi from "face-api.js";
-import { addEmotion, getEmotion } from "../services/userService";
+import { addEmotion, getEmotion, getProfile } from "../services/userService";
 import { getCurrentUser } from "../services/authService";
 
 const EMOTION_EMOJIS = {
@@ -20,7 +20,7 @@ const UserDashboardPage = () => {
   const [loadingCamera, setLoadingCamera] = useState(false); // Spinner for camera
   const [loadingHistory, setLoadingHistory] = useState(false); // Spinner for history
   const [countdown, setCountdown] = useState(0);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
   const [confirmEmotion, setConfirmEmotion] = useState(false);
   const [userId, setUserId] = useState(null);
 
@@ -32,7 +32,7 @@ const UserDashboardPage = () => {
       setUserId(user.id);
       fetchEmotionHistory(user.id);
     }
-
+    loadModels();
     return () => {
       if (videoRef.current && videoRef.current.srcObject) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -40,7 +40,25 @@ const UserDashboardPage = () => {
         tracks.forEach((track) => track.stop());
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loadModels = async () => {
+    try {
+      await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
+      await faceapi.nets.faceExpressionNet.loadFromUri("/models");
+      await faceapi.nets.faceRecognitionNet.loadFromUri("/models");
+      await faceapi.nets.faceLandmark68Net.loadFromUri("/models");
+    } catch (err) {
+      console.error("Failed to load face-api models", err);
+      showError("Error loading AI models.");
+    }
+  };
+
+  const showError = (message) => {
+    setError(message);
+    setTimeout(() => setError(null), 3000);
+  };
 
   const fetchEmotionHistory = async (userId) => {
     setLoadingHistory(true); // Start spinner
@@ -53,27 +71,20 @@ const UserDashboardPage = () => {
       setEmotionHistory(sortedHistory);
     } catch (error) {
       console.error("Failed to fetch emotion history", error);
-      setError("Error fetching emotion history. Please try again.");
+      showError("Error fetching emotion history. Please try again.");
     } finally {
       setLoadingHistory(false); // Stop spinner
-    }
-  };
-
-  const loadModels = async () => {
-    try {
-      await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
-      await faceapi.nets.faceExpressionNet.loadFromUri("/models");
-    } catch (err) {
-      console.error("Failed to load face-api models", err);
-      setError("Error loading AI models.");
     }
   };
 
   const startRecording = async () => {
     setLoadingCamera(true);
     setIsRecording(true);
-    setError("");
+    setError(null);
     await loadModels();
+
+    const profileImageUrl = await getProfile(); // Get profile image URL
+    const profileImage = await faceapi.fetchImage(profileImageUrl); // Load profile image
 
     if (navigator.mediaDevices.getUserMedia) {
       setLoadingCamera(false);
@@ -86,28 +97,78 @@ const UserDashboardPage = () => {
           // Start the countdown
           let timeLeft = 3; // 3-second countdown
           setCountdown(timeLeft);
-          const countdownInterval = setInterval(() => {
+          const countdownInterval = setInterval(async () => {
             timeLeft -= 1;
             setCountdown(timeLeft);
             if (timeLeft === 0) {
               clearInterval(countdownInterval);
-              captureEmotion(); // Automatically capture emotion after countdown
-              setCountdown(0);
+              // Parallel face verification
+              const detections = await faceapi
+                .detectSingleFace(
+                  videoRef.current,
+                  new faceapi.TinyFaceDetectorOptions()
+                )
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+              if (detections) {
+                const profileFace = await faceapi
+                  .detectSingleFace(
+                    profileImage,
+                    new faceapi.TinyFaceDetectorOptions()
+                  )
+                  .withFaceLandmarks()
+                  .withFaceDescriptor();
+
+                if (profileFace) {
+                  const faceMatcher = new faceapi.FaceMatcher(profileFace);
+                  const bestMatch = faceMatcher.findBestMatch(
+                    detections.descriptor
+                  );
+                  if (bestMatch.distance > 0.4) {
+                    // Adjust threshold if needed
+                    console.log(bestMatch.distance);
+                    clearInterval(countdownInterval);
+                    showError("Face does not match profile picture.");
+                    stopRecording();
+                    setIsRecording(false);
+                    return;
+                  } else {
+                    console.log(bestMatch.distance);
+                    captureEmotion(); // Automatically capture emotion after countdown
+                    setCountdown(0);
+                  }
+                } else {
+                  clearInterval(countdownInterval);
+                  showError(
+                    "Profile picture is not suitable for verification."
+                  );
+                  stopRecording();
+                  setIsRecording(false);
+                  return;
+                }
+              } else {
+                clearInterval(countdownInterval);
+                showError("No face detected in the camera.");
+                stopRecording();
+                setIsRecording(false);
+                return;
+              }
             }
           }, 1000);
         })
         .catch((err) => {
           console.error("Error accessing the camera:", err);
-          setError(
+          showError(
             "Unable to access camera. Please ensure camera permissions are allowed."
           );
           setIsRecording(false);
+          stopRecording();
         })
         .finally(() => {
           setLoadingCamera(false); // Stop spinner regardless of success or failure
         });
     } else {
-      setError(
+      showError(
         "Your browser does not support camera access. Please use a compatible browser."
       );
       setLoadingCamera(false);
@@ -125,17 +186,18 @@ const UserDashboardPage = () => {
   };
 
   const captureEmotion = async () => {
+    // Get emotions
     const detections = await faceapi
-      .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+      .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
       .withFaceExpressions();
 
     if (detections.length === 0) {
-      setError("No face detected. Please try again.");
+      showError("No face detected for emotion analysis.");
       stopRecording();
       return;
     }
 
-    const expressions = detections[0].expressions;
+    const expressions = detections.expressions;
     const topEmotion = Object.keys(expressions).reduce((a, b) =>
       expressions[a] > expressions[b] ? a : b
     );
@@ -155,14 +217,57 @@ const UserDashboardPage = () => {
 
       setConfirmEmotion(false);
       stopRecording();
-      setError("");
+      setError(null);
     } catch (error) {
       console.error("Failed to save emotion", error);
-      setError("Failed to save emotion. Please try again.");
+      showError("Failed to save emotion. Please try again.");
     }
   };
   return (
     <>
+      {error && (
+        <div className="fixed top-5 left-1/2 transform -translate-x-1/2">
+          <div
+            id="alert-border-2"
+            className="flex items-center p-4 mb-4 text-red-800 border-t-4 border-red-300 bg-red-50 dark:text-red-400 dark:bg-gray-800 dark:border-red-800"
+            role="alert"
+          >
+            <svg
+              className="shrink-0 w-4 h-4"
+              aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
+            </svg>
+            <div className="ms-3 text-sm font-medium">{error}</div>
+            <button
+              type="button"
+              className="ms-auto -mx-1.5 -my-1.5 bg-red-50 text-red-500 rounded-lg focus:ring-2 focus:ring-red-400 p-1.5 hover:bg-red-200 inline-flex items-center justify-center h-8 w-8 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-gray-700"
+              onClick={() => setError(null)}
+              aria-label="Close"
+            >
+              <span className="sr-only">Dismiss</span>
+              <svg
+                className="w-3 h-3"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 14 14"
+              >
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
       <main className="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
           Welcome to Your Dashboard
@@ -208,7 +313,6 @@ const UserDashboardPage = () => {
               Capturing in {countdown} seconds...
             </p>
           )}
-          {error && <p className="text-red-500 mt-4">{error}</p>}
         </div>
 
         {/* Emotion History Section */}
@@ -283,7 +387,7 @@ const UserDashboardPage = () => {
                 onClick={() => {
                   setConfirmEmotion(false);
                   stopRecording();
-                  setError("");
+                  setError(null);
                 }}
               >
                 Cancel
