@@ -1,10 +1,11 @@
 // ./services/adminServices.js
 import axios from "axios";
+import { getToken } from "./authService";
 
 const API_URL = "http://127.0.0.1:8000/admin";
 
 export const getEmotion = async () => {
-  const token = localStorage.getItem("token");
+  const token = getToken();
   const config = {
     headers: { Authorization: `Bearer ${token}` },
   };
