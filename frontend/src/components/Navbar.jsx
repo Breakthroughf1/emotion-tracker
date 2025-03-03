@@ -6,6 +6,7 @@ import { logoutUser } from "../services/authService";
 const Navbar = ({ isAdmin }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  localStorage.setItem("view", "user");
 
   const handleLogout = () => {
     try {
@@ -18,8 +19,10 @@ const Navbar = ({ isAdmin }) => {
 
   const handleAdminToggle = () => {
     if (location.pathname === "/admin-dashboard") {
+      localStorage.setItem("view", "user");
       navigate("/user-dashboard"); // Redirect to user dashboard
     } else {
+      localStorage.setItem("view", "admin");
       navigate("/admin-dashboard"); // Redirect to admin dashboard
     }
   };

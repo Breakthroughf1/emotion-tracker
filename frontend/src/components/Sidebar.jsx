@@ -14,7 +14,13 @@ const Sidebar = ({ isAdmin }) => {
         {/* Overview Link */}
         <li>
           <NavLink
-            to="/"
+            to={
+              isAdmin
+                ? localStorage.getItem("view") === "admin"
+                  ? "/admin-dashboard"
+                  : "/user-dashboard"
+                : "/user-dashboard"
+            }
             isActive={(match, location) =>
               match ||
               location.pathname === "/admin-dashboard" ||

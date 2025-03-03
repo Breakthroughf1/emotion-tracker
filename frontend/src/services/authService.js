@@ -34,6 +34,8 @@ export const logoutUser = () => {
   // Clear all possible token storage
   localStorage.removeItem("token");
   sessionStorage.removeItem("token");
+
+  localStorage.clear();
 };
 
 // Enhanced authentication check
