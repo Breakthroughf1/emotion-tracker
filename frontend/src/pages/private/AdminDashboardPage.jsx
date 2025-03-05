@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { getEmotion } from "../../services/adminService";
+import {
+  getEmotion,
+  deleteUserEmotion,
+  clearAllEmotions,
+} from "../../services/adminService";
 
 const EMOTION_EMOJIS = {
   happy: "😊",
@@ -17,20 +21,38 @@ const AdminDashboardPage = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetchEmotions = async () => {
-      try {
-        const response = await getEmotion();
-        setEmotionData(response.data);
-      } catch (err) {
-        console.error("Failed to fetch emotions:", err);
-        setError("Unable to fetch emotion data. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchEmotions();
   }, []);
+
+  const fetchEmotions = async () => {
+    try {
+      const response = await getEmotion();
+      setEmotionData(response.data);
+    } catch (err) {
+      console.error("Failed to fetch emotions:", err);
+      setError("Unable to fetch emotion data. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteEmotion = async (userId, timestamp) => {
+    try {
+      await deleteUserEmotion(userId, timestamp);
+      fetchEmotions();
+    } catch (err) {
+      console.error("Failed to delete emotion record:", err);
+    }
+  };
+
+  const handleClearAllEmotions = async () => {
+    try {
+      await clearAllEmotions();
+      fetchEmotions();
+    } catch (err) {
+      console.error("Failed to clear all emotion records:", err);
+    }
+  };
 
   return (
     <main className="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
@@ -41,6 +63,12 @@ const AdminDashboardPage = () => {
         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
           Emotion History by Users
         </h2>
+        <button
+          onClick={handleClearAllEmotions}
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 mb-4"
+        >
+          Clear All Emotion Records
+        </button>
         {loading ? (
           <div className="animate-pulse">
             {[...Array(3)].map((_, index) => (
@@ -86,6 +114,16 @@ const AdminDashboardPage = () => {
                       </td>
                       <td className="border-b dark:border-gray-700 p-4">
                         {new Date(record.timestamp).toLocaleString()}
+                      </td>
+                      <td className="border-b dark:border-gray-700 p-4">
+                        <button
+                          onClick={() =>
+                            handleDeleteEmotion(user.user_id, record.timestamp)
+                          }
+                          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}

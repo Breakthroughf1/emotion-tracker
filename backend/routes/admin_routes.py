@@ -103,3 +103,66 @@ async def get_emotion_stats():
         raise HTTPException(status_code=500, detail="Database error occurred") from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch emotion stats: {str(e)}")
+
+@admin_router.delete("/delete_emotion/{user_id}/{timestamp}")
+async def delete_user_emotion(
+    user_id: int, 
+    timestamp: str, 
+    authorization: str = Header(...)
+):
+    """
+    API to delete a specific emotion record for a user.
+    """
+    try:
+        # Validate token
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Invalid token format")
+        token = authorization.split(" ")[1]
+        user = decode_jwt(token)
+
+        # Check if user is an admin
+        if not user.get("role") or not user["role"]:
+            raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+
+        # Delete emotion from database
+        query = """
+            DELETE FROM emotions 
+            WHERE user_id = :user_id AND timestamp = :timestamp
+        """
+        values = {"user_id": user_id, "timestamp": timestamp}
+        await database.execute(query, values)
+
+        return {"message": "Emotion record deleted successfully"}
+
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail="Database error occurred") from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete emotion: {str(e)}")
+
+
+@admin_router.delete("/clear_all_emotions")
+async def clear_all_emotions(authorization: str = Header(...)):
+    """
+    API to delete all emotion records from the database.
+    """
+    try:
+        # Validate token
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Invalid token format")
+        token = authorization.split(" ")[1]
+        user = decode_jwt(token)
+
+        # Check if user is an admin
+        if not user.get("role") or not user["role"]:
+            raise HTTPException(status_code=403, detail="Access forbidden: Admins only")
+
+        # Delete all emotions
+        query = "DELETE FROM emotions"
+        await database.execute(query)
+
+        return {"message": "All emotion records deleted successfully"}
+
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail="Database error occurred") from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to clear emotions: {str(e)}")
